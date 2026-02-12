@@ -4,9 +4,9 @@
 
 ### Frontend (Mobile) - npm
 ```bash
-cd mobile
-npm install
-npx expo start
+HugATree/ cd mobile
+HugATree/mobile/ npm install
+HugATree/mobile/ npx expo start
 ```
 
 - `npm install` - Installs 31 production dependencies and 4 development dependencies from `package.json` (includes react-native-maps, react-native-map-clustering, etc.)
@@ -16,10 +16,19 @@ npx expo start
 
 **Option 1: Docker (Recommended)**
 ```bash
-docker-compose up
+HugATree/ docker-compose up
 ```
 
-Dependencies are installed automatically in the Docker container. No need to install Composer or PHP locally.
+This starts two services:
+- **api** - PHP backend on `http://localhost:8000`
+- **db** - PostgreSQL database on `localhost:5432`
+
+Dependencies are installed automatically in the Docker container. The database will be initialized with schema from `db/init/`.
+
+To stop the services:
+```bash
+docker-compose down
+```
 
 **Option 2: Local Installation**
 ```bash
