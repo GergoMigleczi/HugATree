@@ -1,0 +1,19 @@
+# Node
+node_modules/
+
+# Expo
+mobile/.expo/
+mobile/node_modules/
+
+# API
+api/node_modules/
+
+# Env
+.env
+*.env
+
+# Mac
+.DS_Store
+
+# Editor
+.vscode/

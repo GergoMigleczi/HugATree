@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16
+    container_name: auth_demo_db
+    environment:
+      POSTGRES_DB: auth_demo
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_demo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./api
+    container_name: auth_demo_api
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: auth_demo
+      DB_USER: postgres
+      DB_PASS: postgres
+
+      JWT_SECRET: change_me_to_a_long_random_string
+      JWT_ISSUER: auth-demo
+      ACCESS_TTL_MINUTES: 1
+      REFRESH_TTL_DAYS: 30
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:
