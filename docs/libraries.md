@@ -30,6 +30,12 @@ To stop the services:
 docker-compose down
 ```
 
+To nuke the local db and rebuild fresh:
+```bash
+docker compose down -v
+docker compose up --build
+```
+
 **Option 2: Local Installation**
 ```bash
 cd api

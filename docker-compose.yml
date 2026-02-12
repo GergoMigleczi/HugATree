@@ -1,9 +1,9 @@
 services:
   db:
     image: postgres:16
-    container_name: auth_demo_db
+    container_name: hugatree_db
     environment:
-      POSTGRES_DB: auth_demo
+      POSTGRES_DB: hugatree
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -12,23 +12,23 @@ services:
       - db_data:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_demo"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hugatree"]
       interval: 5s
       timeout: 3s
       retries: 20
 
   api:
     build: ./api
-    container_name: auth_demo_api
+    container_name: hugatree_api
     environment:
       DB_HOST: db
       DB_PORT: 5432
-      DB_NAME: auth_demo
+      DB_NAME: hugatree
       DB_USER: postgres
       DB_PASS: postgres
 
       JWT_SECRET: change_me_to_a_long_random_string
-      JWT_ISSUER: auth-demo
+      JWT_ISSUER: hugatree
       ACCESS_TTL_MINUTES: 1
       REFRESH_TTL_DAYS: 30
     ports:
