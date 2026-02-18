@@ -1,53 +1,102 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * HugATree brand colour palette.
+ *
+ * Derived from the HugATree logo:
+ *   - The tree canopy uses a vivid forest-green family
+ *   - Warm earthy amber/brown tones from the trunk & logo text
+ *   - Neutrals keep text readable in both light and dark modes
+ *
+ * Usage:
+ *   import { Brand, Colors, Fonts } from '@/constants/theme';
+ *
+ *   // Flat token (always the same hex):
+ *   backgroundColor: Brand.primary
+ *
+ *   // Theme-aware token (switches with color scheme):
+ *   const scheme = useColorScheme();
+ *   const c = Colors[scheme ?? 'light'];
+ *   color: c.text
  */
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+// ─────────────────────────────────────────────────────────────
+// Brand tokens — raw hex values, never depend on color scheme
+// ─────────────────────────────────────────────────────────────
+export const Brand = {
+  // Forest-green family (darkest → lightest)
+  forest:    '#1B4332',   // deep dark green — shadows, focus rings
+  deep:      '#2D6A4F',   // dark muted green — dark-mode borders
+  primary:   '#40916C',   // main brand green — buttons, links, accents
+  mid:       '#52B788',   // medium green — secondary accents
+  light:     '#74C69D',   // light green — dark-mode tint / highlights
+  pale:      '#B7E4C7',   // very light green — light-mode borders
+  mint:      '#D8F3DC',   // near-white green — backgrounds, badges
+
+  // Earthy amber accent (mirrors the warm browns/yellows in the logo)
+  amber:     '#D4A017',   // golden amber — badges, stars, highlights
+  amberLight:'#F4C842',   // bright yellow — active states, warnings
+
+  // Neutral / UI grays
+  charcoal:  '#1C2721',   // near-black green-tinted — dark-mode background
+  darkCard:  '#243B2F',   // slightly lighter — dark-mode card surfaces
+  midGray:   '#4A5E54',   // mid-tone — secondary text, light-mode icons
+  softGray:  '#A8BBB0',   // soft gray-green — placeholder text, dark icons
+  offWhite:  '#F4FAF6',   // warm off-white — light-mode background
+  white:     '#FFFFFF',   // pure white — cards, buttons, icons on colour
+} as const;
+
+// ─────────────────────────────────────────────────────────────
+// Theme-aware color map — plug into useColorScheme()
+// ─────────────────────────────────────────────────────────────
+const tintColorLight = Brand.primary;  // green CTA in light mode
+const tintColorDark  = Brand.light;    // lighter green tint in dark mode
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
+    text:            Brand.charcoal,
+    background:      Brand.offWhite,
+    card:            Brand.white,
+    tint:            tintColorLight,
+    icon:            Brand.midGray,
+    tabIconDefault:  Brand.softGray,
     tabIconSelected: tintColorLight,
+    border:          Brand.pale,
+    placeholder:     Brand.softGray,
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+    text:            Brand.offWhite,
+    background:      Brand.charcoal,
+    card:            Brand.darkCard,
+    tint:            tintColorDark,
+    icon:            Brand.softGray,
+    tabIconDefault:  Brand.midGray,
     tabIconSelected: tintColorDark,
+    border:          Brand.deep,
+    placeholder:     Brand.midGray,
   },
 };
 
+// ─────────────────────────────────────────────────────────────
+// Platform font stacks
+// ─────────────────────────────────────────────────────────────
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
+    sans:    'system-ui',
+    serif:   'ui-serif',
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
+    mono:    'ui-monospace',
   },
   default: {
-    sans: 'normal',
-    serif: 'serif',
+    sans:    'normal',
+    serif:   'serif',
     rounded: 'normal',
-    mono: 'monospace',
+    mono:    'monospace',
   },
   web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
+    sans:    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    serif:   "Georgia, 'Times New Roman', serif",
     rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    mono:    "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
