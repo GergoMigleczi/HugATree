@@ -2,55 +2,45 @@
  * HugATree brand colour palette.
  *
  * Derived from the HugATree logo:
- *   - The tree canopy uses a vivid forest-green family
- *   - Warm earthy amber/brown tones from the trunk & logo text
- *   - Neutrals keep text readable in both light and dark modes
+ *   - Vivid forest-green tree canopy family
+ *   - Warm earthy amber/brown tones (trunk, logo text)
+ *   - Neutrals for readable light and dark mode UI
  *
  * Usage:
- *   import { Brand, Colors, Fonts } from '@/constants/theme';
- *
- *   // Flat token (always the same hex):
- *   backgroundColor: Brand.primary
- *
- *   // Theme-aware token (switches with color scheme):
- *   const scheme = useColorScheme();
- *   const c = Colors[scheme ?? 'light'];
- *   color: c.text
+ *   import { Brand, Colors } from '@/constants/theme';
+ *   backgroundColor: Brand.primary          // flat token
+ *   color: Colors[colorScheme ?? 'light'].text  // theme-aware
  */
 
 import { Platform } from 'react-native';
 
-// ─────────────────────────────────────────────────────────────
-// Brand tokens — raw hex values, never depend on color scheme
-// ─────────────────────────────────────────────────────────────
+// ─── Brand tokens — fixed hex values, not theme-dependent ───────────────────
 export const Brand = {
   // Forest-green family (darkest → lightest)
-  forest:    '#1B4332',   // deep dark green — shadows, focus rings
-  deep:      '#2D6A4F',   // dark muted green — dark-mode borders
-  primary:   '#40916C',   // main brand green — buttons, links, accents
-  mid:       '#52B788',   // medium green — secondary accents
-  light:     '#74C69D',   // light green — dark-mode tint / highlights
-  pale:      '#B7E4C7',   // very light green — light-mode borders
-  mint:      '#D8F3DC',   // near-white green — backgrounds, badges
+  forest:    '#1B4332',
+  deep:      '#2D6A4F',
+  primary:   '#40916C',
+  mid:       '#52B788',
+  light:     '#74C69D',
+  pale:      '#B7E4C7',
+  mint:      '#D8F3DC',
 
-  // Earthy amber accent (mirrors the warm browns/yellows in the logo)
-  amber:     '#D4A017',   // golden amber — badges, stars, highlights
-  amberLight:'#F4C842',   // bright yellow — active states, warnings
+  // Earthy amber accent (sun/trunk tones from the logo)
+  amber:     '#D4A017',
+  amberLight:'#F4C842',
 
-  // Neutral / UI grays
-  charcoal:  '#1C2721',   // near-black green-tinted — dark-mode background
-  darkCard:  '#243B2F',   // slightly lighter — dark-mode card surfaces
-  midGray:   '#4A5E54',   // mid-tone — secondary text, light-mode icons
-  softGray:  '#A8BBB0',   // soft gray-green — placeholder text, dark icons
-  offWhite:  '#F4FAF6',   // warm off-white — light-mode background
-  white:     '#FFFFFF',   // pure white — cards, buttons, icons on colour
+  // Neutrals
+  charcoal:  '#1C2721',
+  darkCard:  '#243B2F',
+  midGray:   '#4A5E54',
+  softGray:  '#A8BBB0',
+  offWhite:  '#F4FAF6',
+  white:     '#FFFFFF',
 } as const;
 
-// ─────────────────────────────────────────────────────────────
-// Theme-aware color map — plug into useColorScheme()
-// ─────────────────────────────────────────────────────────────
-const tintColorLight = Brand.primary;  // green CTA in light mode
-const tintColorDark  = Brand.light;    // lighter green tint in dark mode
+// ─── Theme-aware colour map ──────────────────────────────────────────────────
+const tintColorLight = Brand.primary;
+const tintColorDark  = Brand.light;
 
 export const Colors = {
   light: {
@@ -77,9 +67,7 @@ export const Colors = {
   },
 };
 
-// ─────────────────────────────────────────────────────────────
-// Platform font stacks
-// ─────────────────────────────────────────────────────────────
+// ─── Platform font stacks ────────────────────────────────────────────────────
 export const Fonts = Platform.select({
   ios: {
     sans:    'system-ui',

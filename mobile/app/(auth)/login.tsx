@@ -1,32 +1,22 @@
 /**
  * LoginScreen — Entry point for returning users.
  *
- * What changed / what was added:
- *  • Replaced the bare-bones form with a fully branded, card-based layout.
- *  • Added a hero section (circular logo + HugATree app name + tagline)
- *    so users instantly know which app they're in.
- *  • Wrapped the form in a visual "card" (rounded corners, shadow, border)
- *    to lift it off the background and create visual hierarchy.
- *  • Added Ionicons icons inside each input field (mail / lock) for clarity.
- *  • Added a show/hide password toggle (eye icon) — a common accessibility win.
- *  • Replaced the default <Button> with a styled <Pressable> that:
- *    - uses Brand.primary green as its background
- *    - dims to 75% opacity when pressed or while submitting
- *    - shows a loading label ("Signing in…") while awaiting the API
- *  • Added an "or" divider + outline "Create an account" button so users can
- *    jump to registration without hunting for a link.
- *  • Wrapped the whole screen in KeyboardAvoidingView + ScrollView so form
- *    fields are never hidden by the software keyboard on iOS or Android.
- *  • All colours are sourced from Brand tokens (constants/theme.ts) and
- *    switch automatically between light and dark mode.
+ * Uses the HugATree logo image (assets/images/logo.png) in the hero section.
+ * If the logo file is missing, place the hugatree logo PNG at:
+ *   mobile/assets/images/logo.png
  *
- * IMPORTANT: Remove the hardcoded default credentials (lines 24-25) before
- * shipping to production — they are test-only values for local development.
+ * Design:
+ *  - Hero: logo image + tagline
+ *  - Card: email field, password field with show/hide toggle, sign-in button
+ *  - Secondary: "Create an account" outline button
+ *  - Full dark/light mode support via Brand tokens
+ *  - KeyboardAvoidingView + ScrollView for keyboard handling
  */
 
 import { useState } from "react";
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -44,32 +34,30 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/src/features/auth/AuthProvider";
 import { Brand } from "@/constants/theme";
 
+// Logo asset — place the hugatree PNG at mobile/assets/images/logo.png
+const LOGO = require("@/assets/images/logo.png");
+
 export default function LoginScreen() {
   const { login } = useAuth();
 
-  // TODO: Remove these default values before shipping to production.
-  // They exist only to speed up manual testing during development.
+  // TODO: Remove default credentials before shipping to production
   const [email, setEmail] = useState("test@example.com");
   const [password, setPassword] = useState("Secret123!");
-  const [showPassword, setShowPassword] = useState(false);  // controls eye-toggle
-  const [submitting, setSubmitting] = useState(false);       // disables button while API call is in-flight
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  // ── Theme-aware colour aliases ──────────────────────────────────────────────
-  // Compute once per render from useColorScheme so that every element flips
-  // automatically when the user switches between light/dark mode.
+  // Theme-aware colour aliases
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
 
-  const bg        = isDark ? Brand.charcoal  : Brand.offWhite;  // screen background
-  const cardBg    = isDark ? Brand.darkCard  : Brand.white;     // form card surface
-  const textColor = isDark ? Brand.offWhite  : Brand.charcoal;  // primary text
-  const subColor  = isDark ? Brand.softGray  : Brand.midGray;   // secondary / placeholder text
-  const borderCol = isDark ? Brand.deep      : Brand.pale;      // input & card border
-  const inputBg   = isDark ? Brand.charcoal  : Brand.white;     // text-input background
+  const bg        = isDark ? Brand.charcoal : Brand.offWhite;
+  const cardBg    = isDark ? Brand.darkCard : Brand.white;
+  const textColor = isDark ? Brand.offWhite : Brand.charcoal;
+  const subColor  = isDark ? Brand.softGray : Brand.midGray;
+  const borderCol = isDark ? Brand.deep     : Brand.pale;
+  const inputBg   = isDark ? Brand.charcoal : Brand.white;
 
-  // ── Submit handler ──────────────────────────────────────────────────────────
   async function handleLogin() {
-    // Guard: both fields must be filled before hitting the API
     if (!email.trim() || !password) {
       Alert.alert("Missing fields", "Please enter your email and password.");
       return;
@@ -77,8 +65,7 @@ export default function LoginScreen() {
     try {
       setSubmitting(true);
       await login(email.trim(), password);
-      // On success, AuthProvider updates isLoggedIn → Expo Router redirects
-      // automatically to the (tabs) group; no manual navigation needed here.
+      // AuthProvider sets isLoggedIn → Expo Router redirects to (tabs)
     } catch (e: any) {
       Alert.alert("Login failed", e.message ?? "Please try again.");
     } finally {
@@ -87,120 +74,65 @@ export default function LoginScreen() {
   }
 
   return (
-    // SafeAreaView: respects notches, status bars, and home-indicator insets
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
-      {/*
-       * KeyboardAvoidingView: pushes the form up when the software keyboard
-       * appears. 'padding' mode works best on iOS; 'height' on Android.
-       */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.kav}
       >
-        {/*
-         * ScrollView: allows the page to scroll if the device is very small
-         * or the keyboard is still partially covering content.
-         * keyboardShouldPersistTaps="handled" ensures tapping outside the
-         * keyboard (e.g. on the submit button) dismisses it correctly.
-         */}
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Hero section ────────────────────────────────────────────────
-            * A circular green badge with a leaf icon, the app name, and a
-            * short tagline give the login screen personality and reinforce
-            * the brand before users even interact with the form.
-            */}
+          {/* ── Hero: logo image + tagline ── */}
           <View style={styles.heroSection}>
-            {/* Circular logo badge — uses Brand.primary (main green) */}
-            <View style={[styles.logoCircle, { backgroundColor: Brand.primary }]}>
-              <Ionicons name="leaf" size={44} color={Brand.white} />
-            </View>
-            <Text style={[styles.appName, { color: Brand.primary }]}>HugATree</Text>
+            <Image source={LOGO} style={styles.logoImage} resizeMode="contain" />
             <Text style={[styles.tagline, { color: subColor }]}>
               Track, protect &amp; celebrate trees
             </Text>
           </View>
 
-          {/* ── Form card ───────────────────────────────────────────────────
-            * Floats above the background with a subtle shadow and rounded
-            * corners. The `gap: 16` keeps field spacing consistent without
-            * individual marginBottom values on every child.
-            */}
+          {/* ── Form card ── */}
           <View style={[styles.card, { backgroundColor: cardBg, borderColor: borderCol }]}>
             <Text style={[styles.cardTitle, { color: textColor }]}>Welcome back</Text>
             <Text style={[styles.cardSub, { color: subColor }]}>
               Sign in to your account
             </Text>
 
-            {/* ── Email field ──────────────────────────────────────────────
-              * The icon + input live inside a shared inputRow container so
-              * they align perfectly and share the same border.
-              */}
+            {/* Email field */}
             <View style={styles.fieldGroup}>
               <Text style={[styles.label, { color: subColor }]}>Email</Text>
-              <View
-                style={[
-                  styles.inputRow,
-                  { backgroundColor: inputBg, borderColor: borderCol },
-                ]}
-              >
-                {/* Leading icon helps users identify the field at a glance */}
-                <Ionicons
-                  name="mail-outline"
-                  size={18}
-                  color={subColor}
-                  style={styles.inputIcon}
-                />
+              <View style={[styles.inputRow, { backgroundColor: inputBg, borderColor: borderCol }]}>
+                <Ionicons name="mail-outline" size={18} color={subColor} style={styles.inputIcon} />
                 <TextInput
                   value={email}
                   onChangeText={setEmail}
-                  autoCapitalize="none"       // email addresses are lowercase
-                  keyboardType="email-address" // brings up @ keyboard on mobile
+                  autoCapitalize="none"
+                  keyboardType="email-address"
                   style={[styles.input, { color: textColor }]}
                   placeholder="you@example.com"
                   placeholderTextColor={subColor}
-                  returnKeyType="next"         // "Next" key moves to password
+                  returnKeyType="next"
                 />
               </View>
             </View>
 
-            {/* ── Password field ───────────────────────────────────────────
-              * secureTextEntry is toggled by the eye button on the right,
-              * letting users verify what they typed without being locked out.
-              */}
+            {/* Password field with show/hide toggle */}
             <View style={styles.fieldGroup}>
               <Text style={[styles.label, { color: subColor }]}>Password</Text>
-              <View
-                style={[
-                  styles.inputRow,
-                  { backgroundColor: inputBg, borderColor: borderCol },
-                ]}
-              >
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={18}
-                  color={subColor}
-                  style={styles.inputIcon}
-                />
+              <View style={[styles.inputRow, { backgroundColor: inputBg, borderColor: borderCol }]}>
+                <Ionicons name="lock-closed-outline" size={18} color={subColor} style={styles.inputIcon} />
                 <TextInput
                   value={password}
                   onChangeText={setPassword}
-                  secureTextEntry={!showPassword}  // hide/show based on toggle
+                  secureTextEntry={!showPassword}
                   style={[styles.input, { color: textColor }]}
                   placeholder="At least 8 characters"
                   placeholderTextColor={subColor}
                   returnKeyType="done"
-                  onSubmitEditing={handleLogin}    // "Done" key submits the form
+                  onSubmitEditing={handleLogin}
                 />
-                {/* Eye toggle button — hitSlop expands the tap target */}
-                <Pressable
-                  onPress={() => setShowPassword((v) => !v)}
-                  hitSlop={8}
-                  style={styles.eyeBtn}
-                >
+                <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={8} style={styles.eyeBtn}>
                   <Ionicons
                     name={showPassword ? "eye-off-outline" : "eye-outline"}
                     size={18}
@@ -210,11 +142,7 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            {/* ── Submit button ────────────────────────────────────────────
-              * Uses a callback style prop so the pressed state is handled
-              * inline without extra state. Disabled while submitting to
-              * prevent double-submissions.
-              */}
+            {/* Primary sign-in button */}
             <Pressable
               onPress={handleLogin}
               disabled={submitting}
@@ -223,7 +151,6 @@ export default function LoginScreen() {
                 { backgroundColor: Brand.primary, opacity: pressed || submitting ? 0.75 : 1 },
               ]}
             >
-              {/* Swap label ↔ spinner while the API call is pending */}
               {submitting ? (
                 <Text style={styles.submitText}>Signing in…</Text>
               ) : (
@@ -234,28 +161,19 @@ export default function LoginScreen() {
               )}
             </Pressable>
 
-            {/* ── "or" divider ─────────────────────────────────────────────
-              * A visual separator between the primary action and the
-              * secondary registration CTA.
-              */}
+            {/* Divider */}
             <View style={styles.dividerRow}>
               <View style={[styles.divider, { backgroundColor: borderCol }]} />
               <Text style={[styles.dividerText, { color: subColor }]}>or</Text>
               <View style={[styles.divider, { backgroundColor: borderCol }]} />
             </View>
 
-            {/* ── Register link ────────────────────────────────────────────
-              * Outline style (border, transparent fill) keeps this secondary
-              * action visually distinct from the primary green button.
-              */}
+            {/* Secondary: create account */}
             <Link href="/(auth)/register" asChild>
               <Pressable
                 style={({ pressed }) => [
                   styles.outlineBtn,
-                  {
-                    borderColor: Brand.primary,
-                    opacity: pressed ? 0.7 : 1,
-                  },
+                  { borderColor: Brand.primary, opacity: pressed ? 0.7 : 1 },
                 ]}
               >
                 <Text style={[styles.outlineBtnText, { color: Brand.primary }]}>
@@ -265,24 +183,16 @@ export default function LoginScreen() {
             </Link>
           </View>
 
-          {/* ── Footer tagline ───────────────────────────────────────────── */}
-          <Text style={[styles.footer, { color: subColor }]}>
-            Every tree counts 🌳
-          </Text>
+          <Text style={[styles.footer, { color: subColor }]}>Every tree counts 🌳</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Styles
-// ─────────────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   kav:  { flex: 1 },
-
-  // Centers content vertically on tall screens; allows scrolling on small ones
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 20,
@@ -290,103 +200,59 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  /* ── Hero ── */
-  heroSection: {
-    alignItems: "center",
-    marginBottom: 28,
+  /* Hero */
+  heroSection: { alignItems: "center", marginBottom: 24 },
+  logoImage: {
+    width: 160,
+    height: 160,
+    marginBottom: 8,
   },
-  // Green circle behind the leaf icon — doubles as an app icon stand-in
-  logoCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-    // Subtle drop-shadow reinforces the circular "badge" appearance
-    shadowColor: Brand.forest,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  appName: {
-    fontSize: 30,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  tagline: {
-    fontSize: 14,
-    textAlign: "center",
-  },
+  tagline: { fontSize: 14, textAlign: "center" },
 
-  /* ── Card ── */
+  /* Card */
   card: {
     borderRadius: 20,
     padding: 24,
     borderWidth: 1,
-    // Soft shadow creates depth — lighter on dark backgrounds (elevation handles Android)
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 4,
-    gap: 16, // consistent spacing between all direct children (field groups, buttons)
+    gap: 16,
   },
   cardTitle: { fontSize: 22, fontWeight: "700" },
-  cardSub:   { fontSize: 14, marginTop: -8 },  // negative margin pulls it closer to the title
+  cardSub:   { fontSize: 14, marginTop: -8 },
 
-  /* ── Input fields ── */
-  fieldGroup: { gap: 6 },     // label + input row spacing
+  /* Fields */
+  fieldGroup: { gap: 6 },
   label:      { fontSize: 13, fontWeight: "600" },
-
-  // Horizontal row that wraps the leading icon, text input, and optional trailing button
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1.5,
     borderRadius: 12,
     paddingHorizontal: 12,
-    height: 52,               // tall enough for easy tapping on all device sizes
+    height: 52,
   },
-  inputIcon: { marginRight: 8 },   // gap between icon and text cursor
-  input: {
-    flex: 1,                  // takes all remaining width in the row
-    fontSize: 15,
-    height: "100%",
-  },
-  eyeBtn: { padding: 4 },     // small padding to keep icon touch target comfortable
+  inputIcon: { marginRight: 8 },
+  input: { flex: 1, fontSize: 15, height: "100%" },
+  eyeBtn: { padding: 4 },
 
-  /* ── Buttons ── */
+  /* Buttons */
   submitBtn: {
     height: 52,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
-  // Row inside the submit button: icon + label side-by-side
-  submitInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  submitText: {
-    color: Brand.white,
-    fontSize: 16,
-    fontWeight: "700",
-  },
+  submitInner: { flexDirection: "row", alignItems: "center", gap: 8 },
+  submitText:  { color: Brand.white, fontSize: 16, fontWeight: "700" },
 
-  // "or" divider between primary and secondary actions
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  divider:     { flex: 1, height: 1 },  // expands to fill available space
+  dividerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  divider:     { flex: 1, height: 1 },
   dividerText: { fontSize: 12 },
 
-  // Outline/ghost button for the secondary "Create an account" CTA
   outlineBtn: {
     height: 52,
     borderRadius: 12,
@@ -394,15 +260,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  outlineBtnText: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
+  outlineBtnText: { fontSize: 15, fontWeight: "600" },
 
-  /* ── Footer ── */
-  footer: {
-    textAlign: "center",
-    marginTop: 24,
-    fontSize: 13,
-  },
+  /* Footer */
+  footer: { textAlign: "center", marginTop: 24, fontSize: 13 },
 });
