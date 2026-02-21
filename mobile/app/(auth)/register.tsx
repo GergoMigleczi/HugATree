@@ -32,6 +32,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { useAuth } from "@/src/features/auth/AuthProvider";
 import { Brand } from "@/constants/theme";
+import { useLoading } from "@/src/ui/loading/LoadingProvider";
 
 // Shared logo asset with login screen
 const LOGO = require("@/assets/images/logo.png");
@@ -56,6 +57,8 @@ export default function RegisterScreen() {
   const borderCol = isDark ? Brand.deep     : Brand.pale;
   const inputBg   = isDark ? Brand.charcoal : Brand.white;
 
+  const { withLoading } = useLoading();
+    
   async function handleRegister() {
     if (!displayName.trim() || !email.trim() || !password) {
       Alert.alert("Missing fields", "Please fill in all fields.");
@@ -63,7 +66,15 @@ export default function RegisterScreen() {
     }
     try {
       setSubmitting(true);
-      await register(email.trim(), password, displayName.trim());
+
+      await withLoading(
+        () => register(email.trim(), password, displayName.trim()),
+        {
+          message: "Creating account...",
+          blocking: true,
+          background: "transparent",
+        }
+      );
       // AuthProvider sets isLoggedIn → Expo Router redirects to (tabs)
     } catch (e: any) {
       Alert.alert("Registration failed", e.message ?? "Please try again.");

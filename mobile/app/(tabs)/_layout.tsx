@@ -23,14 +23,31 @@
  *     or add a <Tabs.Screen> block below with the desired options.
  */
 
-import { Redirect, Tabs } from "expo-router";
+import { Redirect, Stack, Tabs } from "expo-router";
+import { useEffect } from "react";
 import { useAuth } from "@/src/features/auth/AuthProvider";
+import { useLoading } from "@/src/ui/loading/LoadingProvider";
 
 export default function TabsLayout() {
   const { loading, isLoggedIn } = useAuth();
+  const { show, hide } = useLoading();
 
-  // Show nothing while session is being restored — avoids a login flash
-  if (loading) return null;
+  useEffect(() => {
+    if (loading) {
+      show({ message: "Loading...",
+        blocking: true,
+        background: "solid" });
+    } else {
+      hide();
+    }
+
+    // ensure overlay is not left on if layout unmounts
+    return () => hide();
+  }, [loading, show, hide]);
+
+  // While auth is resolving, render something cheap (Stack is fine),
+  // overlay will block interaction anyway.
+  if (loading) return <Stack screenOptions={{ headerShown: false }} />;
 
   // Not authenticated — redirect to login
   if (!isLoggedIn) return <Redirect href="/(auth)/login" />;
