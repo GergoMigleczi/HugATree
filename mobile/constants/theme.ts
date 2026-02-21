@@ -1,53 +1,90 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * HugATree brand colour palette.
+ *
+ * Derived from the HugATree logo:
+ *   - Vivid forest-green tree canopy family
+ *   - Warm earthy amber/brown tones (trunk, logo text)
+ *   - Neutrals for readable light and dark mode UI
+ *
+ * Usage:
+ *   import { Brand, Colors } from '@/constants/theme';
+ *   backgroundColor: Brand.primary          // flat token
+ *   color: Colors[colorScheme ?? 'light'].text  // theme-aware
  */
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+// ─── Brand tokens — fixed hex values, not theme-dependent ───────────────────
+export const Brand = {
+  // Forest-green family (darkest → lightest)
+  forest:    '#1B4332',
+  deep:      '#2D6A4F',
+  primary:   '#40916C',
+  mid:       '#52B788',
+  light:     '#74C69D',
+  pale:      '#B7E4C7',
+  mint:      '#D8F3DC',
+
+  // Earthy amber accent (sun/trunk tones from the logo)
+  amber:     '#D4A017',
+  amberLight:'#F4C842',
+
+  // Neutrals
+  charcoal:  '#1C2721',
+  darkCard:  '#243B2F',
+  midGray:   '#4A5E54',
+  softGray:  '#A8BBB0',
+  offWhite:  '#F4FAF6',
+  white:     '#FFFFFF',
+} as const;
+
+// ─── Theme-aware colour map ──────────────────────────────────────────────────
+const tintColorLight = Brand.primary;
+const tintColorDark  = Brand.light;
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
+    text:            Brand.charcoal,
+    background:      Brand.offWhite,
+    card:            Brand.white,
+    tint:            tintColorLight,
+    icon:            Brand.midGray,
+    tabIconDefault:  Brand.softGray,
     tabIconSelected: tintColorLight,
+    border:          Brand.pale,
+    placeholder:     Brand.softGray,
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+    text:            Brand.offWhite,
+    background:      Brand.charcoal,
+    card:            Brand.darkCard,
+    tint:            tintColorDark,
+    icon:            Brand.softGray,
+    tabIconDefault:  Brand.midGray,
     tabIconSelected: tintColorDark,
+    border:          Brand.deep,
+    placeholder:     Brand.midGray,
   },
 };
 
+// ─── Platform font stacks ────────────────────────────────────────────────────
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
+    sans:    'system-ui',
+    serif:   'ui-serif',
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
+    mono:    'ui-monospace',
   },
   default: {
-    sans: 'normal',
-    serif: 'serif',
+    sans:    'normal',
+    serif:   'serif',
     rounded: 'normal',
-    mono: 'monospace',
+    mono:    'monospace',
   },
   web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
+    sans:    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    serif:   "Georgia, 'Times New Roman', serif",
     rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    mono:    "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
