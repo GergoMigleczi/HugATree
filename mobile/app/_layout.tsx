@@ -5,6 +5,7 @@ import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AuthProvider } from "@/src/features/auth/AuthProvider";
+import { LoadingProvider } from "@/src/ui/loading/LoadingProvider";
 
 export const unstable_settings = {
   anchor: "(auth)",
@@ -16,16 +17,18 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack>
-          {/* Auth group (login/register) */}
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <LoadingProvider>
+          <Stack>
+            {/* Auth group (login/register) */}
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
 
-          {/* Your existing tabs */}
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            {/* Your existing tabs */}
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-          {/* Existing modal */}
-          <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
-        </Stack>
+            {/* Existing modal */}
+            <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
+          </Stack>
+        </LoadingProvider>
         <StatusBar style="auto" />
       </ThemeProvider>
     </AuthProvider>

@@ -33,6 +33,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { useAuth } from "@/src/features/auth/AuthProvider";
 import { Brand } from "@/constants/theme";
+import { useLoading } from "@/src/ui/loading/LoadingProvider";
 
 // Logo asset — place the hugatree PNG at mobile/assets/images/logo.png
 const LOGO = require("@/assets/images/logo.png");
@@ -41,8 +42,8 @@ export default function LoginScreen() {
   const { login } = useAuth();
 
   // TODO: Remove default credentials before shipping to production
-  const [email, setEmail] = useState("test@example.com");
-  const [password, setPassword] = useState("Secret123!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -57,6 +58,9 @@ export default function LoginScreen() {
   const borderCol = isDark ? Brand.deep     : Brand.pale;
   const inputBg   = isDark ? Brand.charcoal : Brand.white;
 
+
+  const { withLoading } = useLoading();
+
   async function handleLogin() {
     if (!email.trim() || !password) {
       Alert.alert("Missing fields", "Please enter your email and password.");
@@ -64,7 +68,15 @@ export default function LoginScreen() {
     }
     try {
       setSubmitting(true);
-      await login(email.trim(), password);
+
+      await withLoading(
+        () => login(email.trim(), password),
+        {
+          message: "Signing in...",
+          blocking: true,
+          background: "transparent",
+        }
+      );
       // AuthProvider sets isLoggedIn → Expo Router redirects to (tabs)
     } catch (e: any) {
       Alert.alert("Login failed", e.message ?? "Please try again.");
