@@ -4,18 +4,36 @@ declare(strict_types=1);
 namespace App\Http\Routes;
 
 use App\Application\UseCase\CreateTree;
+use App\Application\UseCase\GetTreesInBbox;
 use App\Http\Json;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Slim\App;
 
+// NOTE: We accept $routes as "any route collector" (Slim\App or RouteCollectorProxy)
+// so this works both for $app and for $app->group(...) $group.
 final class TreesRoutes
 {
-    public static function register(App $app, CreateTree $createTree): void
+    public static function registerPublic($routes, GetTreesInBbox $getTreesInBbox): void
     {
-        $app->post('/trees', function (Request $req, Response $res) use ($createTree) {
+        // GET /trees (public) - bbox viewport query
+        $routes->get('/trees', function (Request $req, Response $res) use ($getTreesInBbox) {
+            $query = $req->getQueryParams();
 
-            // AuthMiddleware puts JWT claims into request attribute "auth"
+            try {
+                $result = $getTreesInBbox->execute($query);
+                return Json::ok($res, $result, 200);
+            } catch (\InvalidArgumentException $e) {
+                return Json::ok($res, ['error' => $e->getMessage()], 422);
+            } catch (\Throwable $e) {
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+    }
+
+    public static function registerProtected($routes, CreateTree $createTree): void
+    {
+        // POST /trees (JWT required)
+        $routes->post('/trees', function (Request $req, Response $res) use ($createTree) {
             $claims = $req->getAttribute('auth');
 
             if (!is_array($claims) || empty($claims['sub'])) {
@@ -32,12 +50,9 @@ final class TreesRoutes
             try {
                 $result = $createTree->execute($userId, $body);
                 return Json::ok($res, $result, 201);
-
             } catch (\InvalidArgumentException $e) {
                 return Json::ok($res, ['error' => $e->getMessage()], 422);
-
             } catch (\Throwable $e) {
-                // In real app log $e
                 return Json::ok($res, ['error' => 'Unexpected server error'], 500);
             }
         });

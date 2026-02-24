@@ -25,6 +25,7 @@ use App\Application\UseCase\LogoutSession;
 use App\Application\UseCase\RefreshSession;
 use App\Application\UseCase\RegisterUser;
 use App\Application\UseCase\CreateTree;
+use App\Application\UseCase\GetTreesInBbox;
 
 use Dotenv\Dotenv;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -60,6 +61,7 @@ $loginUser = new LoginUser($userRepo, $sessionRepo, $passwordHasher, $tokenServi
 $refreshSession = new RefreshSession($sessionRepo, $tokenService);
 $logoutSession = new LogoutSession($sessionRepo);
 $getMe = new GetMe($userRepo);
+$getTreesInBbox = new GetTreesInBbox($treeRepo);
 
 // --- trees use case ---
 $createTree = new CreateTree(
@@ -76,12 +78,15 @@ $app->get("/health", function (Request $req, Response $res) use ($pdo) {
   return Json::ok($res, ["ok" => true], 200);
 });
 
+// Public trees endpoints
 AuthRoutes::register($app, $registerUser, $loginUser, $refreshSession, $logoutSession);
 MeRoutes::register($app, $getMe);
 
-// Protected routes (JWT required)
+TreesRoutes::registerPublic($app, $getTreesInBbox);
+
+// Protected trees endpoints (JWT required)
 $app->group('', function ($group) use ($createTree) {
-  TreesRoutes::register($group, $createTree);
+  TreesRoutes::registerProtected($group, $createTree);
 })->add(new AuthMiddleware());
 
 $app->run();
