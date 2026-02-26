@@ -13,6 +13,9 @@ type Props = {
   recenterToken?: number;
   renderKey?: string | number;
   mode?: "full" | "preview";
+  pickLocationEnabled?: boolean;
+  onMapPress?: (coord: LatLng) => void;
+  draftMarker?: LatLng | null;
 };
 
 export default function MapImpl({ pins,
@@ -21,6 +24,9 @@ export default function MapImpl({ pins,
   recenterToken = 0,
   renderKey = 0,
   mode = "full",
+  pickLocationEnabled = false,
+  onMapPress,
+  draftMarker,
 }: Props) {
   const mapRef = useRef<any>(null);
 
@@ -81,7 +87,20 @@ export default function MapImpl({ pins,
         showsUserLocation={true}
         // drag disables follow
         onPanDrag={() => followUser && setFollowUser(false)}
+        onPress={(e) => {
+                if (!pickLocationEnabled) return;
+                const coord = e.nativeEvent.coordinate as LatLng;
+                onMapPress?.(coord);
+              }}
       >
+        {/* Draft marker (user-picked location) */}
+        {draftMarker ? (
+          <Marker
+            key="draft"
+            coordinate={draftMarker}
+            // optional: different pin appearance if you have a custom marker
+          />
+        ) : null}
         {pins.map((p) => (
           <Marker
             key={p.id}

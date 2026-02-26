@@ -15,6 +15,9 @@ import { useLiveLocation } from "../../src/features/location/hooks/useLiveLocati
 import BackToCurrentLocationButton from "../../src/features/map/components/BackToCurrentLocationButton";
 import { Brand } from "@/constants/theme";
 
+import SpeciesSelect from "@/src/features/trees/components/SpeciesSelect";
+import { useSpeciesOptions } from "@/src/features/trees/useSpeciesOptions";
+
 export default function MapRoute() {
   const router = useRouter();
 
@@ -33,6 +36,31 @@ export default function MapRoute() {
 
   // 0 = closed, 1 = 35%, 2 = 100%
   const [sheetStage, setSheetStage] = useState<0 | 1 | 2>(0);
+  const sheetIndex = sheetStage === 0 ? -1 : sheetStage === 1 ? 0 : 1;
+
+  // Species input state (in the real flow this would likely be part of a bigger "new observation" state object)
+  const [speciesId, setSpeciesId] = useState<string | null>(null);
+
+  // Loaction input (picked by tapping on the map when sheet is at stage 1)
+  type LatLng = { latitude: number; longitude: number };
+  const [draftLocation, setDraftLocation] = useState<LatLng | null>(null);
+  const canPickLocation = sheetStage === 1;
+  const onMapPickLocation = (coord: LatLng) => {
+    if (!canPickLocation) return;
+    setDraftLocation(coord);
+  };
+
+  // only fetch when sheet is open on step 1
+  const speciesState = useSpeciesOptions(sheetStage === 1);
+
+  const openAddTree = () => setSheetStage(1);
+  const canGoNext = !!speciesId && !!draftLocation;
+  const goNext = () => setSheetStage(2);
+  const closeSheet = () => {
+    setSheetStage(0);
+    setSpeciesId(null);
+    setDraftLocation(null);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -53,27 +81,11 @@ export default function MapRoute() {
   // Skeleton/simple version: closed => 100%, open at 35% => 65%, full => 0% (map hidden)
   const mapAnimatedStyle = useAnimatedStyle(() => {
     const heightPct = sheetStage === 0 ? 100 : sheetStage === 1 ? 65 : 0;
+    const duration = sheetStage === 1 ? 320 : 50; // a bit slower when going to 35% for a nicer effect
     return {
-      height: withTiming(`${heightPct}%`, { duration: 220 }),
+      height: withTiming(`${heightPct}%`, { duration: duration }),
     };
   }, [sheetStage]);
-
-  const openAddTree = () => {
-    setSheetStage(1);
-    // snap index 0 => "35%"
-    sheetRef.current?.snapToIndex(0);
-  };
-
-  const goNext = () => {
-    setSheetStage(2);
-    // snap index 1 => "100%"
-    sheetRef.current?.snapToIndex(1);
-  };
-
-  const closeSheet = () => {
-    setSheetStage(0);
-    sheetRef.current?.close(); // collapse/close
-  };
 
   if (error) {
     return <View style={styles.center} />;
@@ -88,6 +100,9 @@ export default function MapRoute() {
           userLocation={userLocation}
           onPinPress={onPinPress}
           recenterToken={recenterToken}
+          pickLocationEnabled={canPickLocation}
+          onMapPress={onMapPickLocation}
+          draftMarker={draftLocation}
         />
 
         {!pins ? (
@@ -129,68 +144,82 @@ export default function MapRoute() {
       </Animated.View>
 
       {/* Bottom sheet lives outside the map container */}
-      <BottomSheet
-        ref={sheetRef}
-        index={-1} // closed initially
-        snapPoints={snapPoints}
-        enablePanDownToClose={false}     // ✅ can’t swipe down to close
-        enableHandlePanningGesture={false} // ✅ can’t drag by the handle
-        enableContentPanningGesture={false} // ✅ can’t drag by panning content
-        handleComponent={null}           // ✅ removes the grab handle UI
-        onClose={() => setSheetStage(0)}
-        handleIndicatorStyle={{ backgroundColor: "#999" }}
-      >
-        <BottomSheetView style={styles.sheetContent}>
-          {sheetStage === 1 ? (
-            <>
-              <Text style={styles.sheetTitle}>Add a Tree</Text>
+      {sheetStage !== 0 ? (
+        <BottomSheet
+          ref={sheetRef}
+          index={sheetIndex}                // ✅ controlled
+          snapPoints={snapPoints}
+          enableDynamicSizing={false}       // ✅ ensures snapPoints are respected (if supported)
+          enablePanDownToClose={false}
+          enableHandlePanningGesture={false}
+          enableContentPanningGesture={false}
+          handleComponent={null}
+          handleIndicatorStyle={{ backgroundColor: "#999" }}
+        >
+          <BottomSheetView style={styles.sheetContent}>
+            {sheetStage === 1 ? (
+              <>
+                <Text style={styles.sheetTitle}>Add a Tree</Text>
 
-              {/* Skeleton placeholders */}
-              <View style={styles.field}>
-                <Text style={styles.label}>Tree species</Text>
-                <View style={styles.fakeInput}>
-                  <Text style={{ color: "#666" }}>[Dropdown goes here]</Text>
+                <View style={styles.field}>
+                  <SpeciesSelect
+                    valueId={speciesId}
+                    onChange={setSpeciesId}
+                    options={speciesState.status === "success" ? speciesState.data : []}
+                    loading={speciesState.status === "loading"}
+                    error={speciesState.status === "error" ? speciesState.error : null}
+                  />
                 </View>
-              </View>
 
-              <View style={styles.field}>
-                <Text style={styles.label}>Location</Text>
-                <View style={styles.fakeInput}>
-                  <Text style={{ color: "#666" }}>[Tap map to select lat/long]</Text>
+                <View style={styles.field}>
+                  <Text style={styles.label}>Location</Text>
+                  <View style={styles.fakeInput}>
+                    <Text style={{ color: draftLocation ? Brand.charcoal : "#666" }}>
+                      {draftLocation
+                        ? `${draftLocation.latitude.toFixed(6)}, ${draftLocation.longitude.toFixed(6)}`
+                        : "Tap map to select a location"}
+                    </Text>
+                  </View>
                 </View>
-              </View>
 
-              <View style={styles.row}>
-                <Pressable onPress={closeSheet} style={styles.secondaryBtn}>
-                  <Text style={styles.secondaryBtnText}>Cancel</Text>
+                <View style={styles.row}>
+                  <Pressable onPress={closeSheet} style={styles.secondaryBtn}>
+                    <Text style={styles.secondaryBtnText}>Cancel</Text>
+                  </Pressable>
+
+                  <Pressable onPress={goNext}
+                    style={[styles.primaryBtn, { opacity: canGoNext ? 1 : 0.5 }]}
+                    disabled={!canGoNext}
+                  >
+                    <Text style={styles.primaryBtnText}>Next</Text>
+                  </Pressable>
+                </View>
+              </>
+            ) : sheetStage === 2 ? (
+              <>
+                <Text style={styles.sheetTitle}>Observation</Text>
+                <Text style={{ color: "#666", marginBottom: 12 }}>
+                  (This will become your existing observation modal UI)
+                </Text>
+
+                <Pressable
+                  onPress={() => setSheetStage(1)}
+                  style={styles.secondaryBtn}
+                >
+                  <Text style={styles.secondaryBtnText}>Back</Text>
                 </Pressable>
 
-                <Pressable onPress={goNext} style={styles.primaryBtn}>
-                  <Text style={styles.primaryBtnText}>Next</Text>
+                <Pressable
+                  onPress={() => setSheetStage(0)}
+                  style={styles.primaryBtn}
+                >
+                  <Text style={styles.primaryBtnText}>Save</Text>
                 </Pressable>
-              </View>
-            </>
-          ) : (
-            <>
-              <Text style={styles.sheetTitle}>Observation</Text>
-              <Text style={{ color: "#666", marginBottom: 12 }}>
-                (This will become your existing observation modal UI)
-              </Text>
-
-              <Pressable
-                onPress={() => {
-                  // Optional: go back to step 1
-                  setSheetStage(1);
-                  sheetRef.current?.snapToIndex(0);
-                }}
-                style={styles.secondaryBtn}
-              >
-                <Text style={styles.secondaryBtnText}>Back</Text>
-              </Pressable>
-            </>
-          )}
-        </BottomSheetView>
-      </BottomSheet>
+              </>
+            ) : null}
+          </BottomSheetView>
+        </BottomSheet>
+      ) : null}
     </View>
   );
 }
