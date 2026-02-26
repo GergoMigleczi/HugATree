@@ -100,38 +100,5 @@ Routes and use cases are not aware of Slim’s container (plain Slim).
   - new session inserted
   - new refresh token returned
 
-## Key endpoints
 
-- `GET /health`
-  - health check (DB connectivity)
-
-- `POST /auth/register`
-  - creates a user
-  - returns created user
-
-- `POST /auth/login`
-  - verifies password
-  - returns `{ accessToken, refreshToken, user }`
-  - creates a session record for refresh token
-
-- `POST /auth/refresh`
-  - validates refresh token session
-  - revokes old session
-  - creates new session + new refresh token
-  - returns `{ accessToken, refreshToken }`
-
-- `POST /auth/logout`
-  - revokes refresh token session (server-side)
-  - client should also clear local tokens
-
-- `GET /me`
-  - protected (JWT required)
-  - returns logged-in user
-
-## Database model (auth)
-
-- `users`: email + password_hash + metadata
-- `sessions`: refresh token sessions (hashed token + expiry + device label etc.)
-
----
 

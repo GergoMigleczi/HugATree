@@ -5,6 +5,7 @@ namespace App\Http\Routes;
 
 use App\Application\UseCase\CreateTree;
 use App\Application\UseCase\GetTreesInBbox;
+use App\Application\UseCase\GetSpecies;
 use App\Http\Json;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -13,7 +14,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 // so this works both for $app and for $app->group(...) $group.
 final class TreesRoutes
 {
-    public static function registerPublic($routes, GetTreesInBbox $getTreesInBbox): void
+    public static function registerPublic($routes, GetTreesInBbox $getTreesInBbox, GetSpecies $getSpecies): void
     {
         // GET /trees (public) - bbox viewport query
         $routes->get('/trees', function (Request $req, Response $res) use ($getTreesInBbox) {
@@ -25,6 +26,29 @@ final class TreesRoutes
             } catch (\InvalidArgumentException $e) {
                 return Json::ok($res, ['error' => $e->getMessage()], 422);
             } catch (\Throwable $e) {
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+
+        // GET /trees/species (public)
+        $routes->get('/trees/species', function (Request $req, Response $res) use ($getSpecies) {
+            $query = $req->getQueryParams();
+
+            $q = isset($query['q']) ? trim((string)$query['q']) : null;
+
+            $limit = isset($query['limit']) ? (int)$query['limit'] : 200;
+            if ($limit <= 0) $limit = 200;
+            if ($limit > 500) $limit = 500;
+
+            $offset = isset($query['offset']) ? (int)$query['offset'] : 0;
+            if ($offset < 0) $offset = 0;
+
+            try {
+                $result = $getSpecies->execute($q, $limit, $offset);
+                return Json::ok($res, $result, 200);
+            } catch (\Throwable $e) {
+                error_log('[GET /trees/species] ' . $e->getMessage());
+                error_log($e->getTraceAsString());
                 return Json::ok($res, ['error' => 'Unexpected server error'], 500);
             }
         });
