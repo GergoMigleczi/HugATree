@@ -9,7 +9,20 @@ final class GetSpecies
 {
     public function __construct(private SpeciesRepository $speciesRepo) {}
 
-    /** @return array<int, array{ id:int, common_name:string, scientific_name:?string, gbif_taxon_key:?int }> */
+    /**
+     * @return array{
+     *   items: array<int, array{
+     *     id:int,
+     *     common_name:string,
+     *     scientific_name:?string,
+     *     gbif_taxon_key:?int
+     *   }>,
+     *   count: int,
+     *   limit: int,
+     *   offset: int,
+     *   hasMore: bool
+     * }
+     */
     public function execute(?string $q, int $limit, int $offset): array
     {
         return $this->speciesRepo->list($q, $limit, $offset);

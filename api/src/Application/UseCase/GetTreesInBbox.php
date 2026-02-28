@@ -10,7 +10,24 @@ final class GetTreesInBbox
     public function __construct(private TreeRepository $trees) {}
 
     /**
-     * @return array{items: array<int, array{id:int,speciesId:?int,speciesCommonName:?string,lat:float,lng:float}>, count:int}
+     * Retrieves approved trees within a bounding box.
+     *
+     * Delegates to TreeRepository and returns:
+     *  - items: limited result set
+     *  - count: total number of matching rows (ignores limit)
+     *  - limit: applied limit
+     *
+     * @return array{
+     *   items: array<int, array{
+     *     id:int,
+     *     speciesId:?int,
+     *     speciesCommonName:?string,
+     *     lat:float,
+     *     lng:float
+     *   }>,
+     *   count: int,
+     *   limit: int
+     * }
      */
     public function execute(array $query): array
     {
@@ -34,12 +51,13 @@ final class GetTreesInBbox
         $limit = $this->optionalInt($query, 'limit', 5000);
         if ($limit < 1) $limit = 1;
 
-        $items = $this->trees->findApprovedInBbox($minLat, $minLng, $maxLat, $maxLng, $limit);
-
-        return [
-            'items' => $items,
-            'count' => count($items),
-        ];
+        return $this->trees->findApprovedInBbox(
+                    $minLat,
+                    $minLng,
+                    $maxLat,
+                    $maxLng,
+                    $limit
+                );
     }
 
     private function requireFloat(array $query, string $key): float

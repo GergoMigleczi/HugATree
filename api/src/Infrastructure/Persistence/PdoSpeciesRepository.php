@@ -15,34 +15,53 @@ final class PdoSpeciesRepository implements SpeciesRepository
         $limit  = max(1, min(500, $limit));
         $offset = max(0, $offset);
 
-        if ($q === null || trim($q) === '') {
-            $stmt = $this->pdo->prepare(
-                "SELECT id, common_name, scientific_name, gbif_taxon_key
-                 FROM species
-                 ORDER BY common_name ASC
-                 LIMIT :limit OFFSET :offset"
-            );
-            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-            $stmt->execute();
-        } else {
-            $stmt = $this->pdo->prepare(
-                "SELECT id, common_name, scientific_name, gbif_taxon_key
-                 FROM species
-                 WHERE common_name ILIKE :q OR scientific_name ILIKE :q
-                 ORDER BY common_name ASC
-                 LIMIT :limit OFFSET :offset"
-            );
-            $stmt->bindValue(':q', '%' . trim($q) . '%', PDO::PARAM_STR);
-            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-            $stmt->execute();
+        $q = $q !== null ? trim($q) : null;
+        $hasQuery = $q !== null && $q !== '';
+
+        // WHERE clause shared by both queries
+        $whereSql = $hasQuery
+            ? "WHERE common_name ILIKE :q OR scientific_name ILIKE :q"
+            : "";
+
+        // 1) Total count (ignores limit/offset)
+        $countSql = "
+            SELECT COUNT(*)::int AS total
+            FROM species
+            $whereSql
+        ";
+
+        $countStmt = $this->pdo->prepare($countSql);
+
+        if ($hasQuery) {
+            $countStmt->bindValue(':q', '%' . $q . '%', PDO::PARAM_STR);
         }
 
-        /** @var array<int, array<string, mixed>> $rows */
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $countStmt->execute();
+        $total = (int)$countStmt->fetchColumn();
 
-        return array_map(static function (array $r): array {
+        // 2) Items (paged)
+        $itemsSql = "
+            SELECT id, common_name, scientific_name, gbif_taxon_key
+            FROM species
+            $whereSql
+            ORDER BY common_name ASC
+            LIMIT :limit OFFSET :offset
+        ";
+
+        $itemsStmt = $this->pdo->prepare($itemsSql);
+
+        if ($hasQuery) {
+            $itemsStmt->bindValue(':q', '%' . $q . '%', PDO::PARAM_STR);
+        }
+
+        $itemsStmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $itemsStmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $itemsStmt->execute();
+
+        /** @var array<int, array<string, mixed>> $rows */
+        $rows = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $items = array_map(static function (array $r): array {
             return [
                 'id' => (int)$r['id'],
                 'common_name' => (string)$r['common_name'],
@@ -50,5 +69,13 @@ final class PdoSpeciesRepository implements SpeciesRepository
                 'gbif_taxon_key' => $r['gbif_taxon_key'] !== null ? (int)$r['gbif_taxon_key'] : null,
             ];
         }, $rows);
+
+        return [
+            'items' => $items,
+            'count' => $total,
+            'limit' => $limit,
+            'offset' => $offset,
+            'hasMore' => ($offset + count($items)) < $total,
+        ];
     }
 }
