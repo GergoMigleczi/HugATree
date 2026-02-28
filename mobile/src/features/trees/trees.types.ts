@@ -1,6 +1,13 @@
 /* =========================
    Species
 ========================= */
+export type SpeciesListResponseApi = {
+  items: SpeciesApiItem[];
+  count: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+};
 
 // What UI uses
 export type SpeciesOption = {
@@ -47,6 +54,7 @@ export type TreesInBboxResponseApi = {
     lng: number;
   }>;
   count: number;
+  limit: number;
 };
 
 

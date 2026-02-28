@@ -1,9 +1,9 @@
 import { authFetch } from "@/src/api/authFetch";
-import type { SpeciesOption, SpeciesApiItem, CreateTreeInput, CreateTreeResponseApi, TreePin, GetTreesInBboxParams, TreesInBboxResponseApi} from "./trees.types";
+import type { SpeciesOption, CreateTreeInput, CreateTreeResponseApi, TreePin, GetTreesInBboxParams, TreesInBboxResponseApi, SpeciesListResponseApi} from "./trees.types";
 
 export async function getSpeciesOptions(): Promise<SpeciesOption[]> {
-  const items = await authFetch<SpeciesApiItem[]>("/trees/species", { method: "GET" });
-  return items.map((s) => ({
+  const res = await authFetch<SpeciesListResponseApi>("/trees/species", { method: "GET" });
+  return res.items.map((s) => ({
     id: s.id,
     commonName: s.common_name,
     scientificName: s.scientific_name ?? undefined,
@@ -21,7 +21,7 @@ export async function createTreeApi(input: CreateTreeInput): Promise<CreateTreeR
   });
 }
 
-export async function getTreesInBboxApi(params: GetTreesInBboxParams): Promise<{ items: TreePin[]; count: number }> {
+export async function getTreesInBboxApi(params: GetTreesInBboxParams): Promise<{ items: TreePin[]; count: number, total: number, limit: number, hasMore: boolean }> {
 
   const limit = params.limit ?? 5000;
   if (!Number.isInteger(limit) || limit <= 0) throw new Error("limit must be a positive integer");
@@ -44,6 +44,9 @@ export async function getTreesInBboxApi(params: GetTreesInBboxParams): Promise<{
         speciesId: x.speciesId ?? undefined,
         speciesCommonName: x.speciesCommonName ?? undefined,
     })),
-    count: typeof res.count === "number" ? res.count : res.items.length,
+    count: res.items.length,
+    total: res.count,
+    limit,
+    hasMore: res.count > res.items.length ? true : false,
   };
 }
