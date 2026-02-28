@@ -182,14 +182,10 @@ export default function RegisterScreen() {
                 { backgroundColor: Brand.primary, opacity: pressed || submitting ? 0.75 : 1 },
               ]}
             >
-              {submitting ? (
-                <Text style={styles.submitText}>Creating account…</Text>
-              ) : (
-                <View style={styles.submitInner}>
-                  <Ionicons name="checkmark-circle-outline" size={18} color={Brand.white} />
-                  <Text style={styles.submitText}>Create account</Text>
-                </View>
-              )}
+              <View style={styles.submitInner}>
+                <Ionicons name="checkmark-circle-outline" size={18} color={Brand.white} />
+                <Text style={styles.submitText}>Create account</Text>
+              </View>
             </Pressable>
 
             {/* Divider */}

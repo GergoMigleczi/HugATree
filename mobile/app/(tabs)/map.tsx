@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,7 +16,9 @@ import BackToCurrentLocationButton from "../../src/features/map/components/BackT
 import { Brand } from "@/constants/theme";
 
 import SpeciesSelect from "@/src/features/trees/components/SpeciesSelect";
-import { useSpeciesOptions } from "@/src/features/trees/useSpeciesOptions";
+import { useSpeciesOptions } from "@/src/features/trees/hooks/useSpeciesOptions";
+import { useLoading } from "@/src/ui/loading/LoadingProvider";
+import { createTree } from "@/src/features/trees/usecases/createTree";
 
 export default function MapRoute() {
   const router = useRouter();
@@ -24,6 +26,7 @@ export default function MapRoute() {
   const [pins, setPins] = useState<Pin[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recenterToken, setRecenterToken] = useState(0);
+    const [submitting, setSubmitting]   = useState(false);
 
   const onPinPress = usePinPress();
 
@@ -38,7 +41,7 @@ export default function MapRoute() {
   const [sheetStage, setSheetStage] = useState<0 | 1 | 2>(0);
   const sheetIndex = sheetStage === 0 ? -1 : sheetStage === 1 ? 0 : 1;
 
-  // Species input state (in the real flow this would likely be part of a bigger "new observation" state object)
+  // Species input state 
   const [speciesId, setSpeciesId] = useState<string | null>(null);
 
   // Loaction input (picked by tapping on the map when sheet is at stage 1)
@@ -61,6 +64,38 @@ export default function MapRoute() {
     setSpeciesId(null);
     setDraftLocation(null);
   };
+  
+  const { withLoading } = useLoading();
+
+  async function handleSaveTree(){
+        try {
+          await withLoading(
+            () => createTree({
+              tree:{
+                locationLat: draftLocation!.latitude,
+                locationLng: draftLocation!.longitude,
+                speciesId: parseInt(speciesId!),
+                },
+              observation: {
+                title: "",
+                noteText: "",
+              }
+            }),
+            {
+              message: "Saving ...",
+              blocking: true,
+              background: "transparent",
+            }
+          );
+          // AuthProvider sets isLoggedIn → Expo Router redirects to (tabs)
+        } catch (e: any) {
+          Alert.alert("Failed to save tree", e.message ?? "Please try again.");
+        } finally {
+          Alert.alert("Tree added", "Your tree has been added successfully.");
+          closeSheet();
+          setSubmitting(false);
+        }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -197,6 +232,7 @@ export default function MapRoute() {
               </>
             ) : sheetStage === 2 ? (
               <>
+              <View style={{paddingTop: 70 }}>
                 <Text style={styles.sheetTitle}>Observation</Text>
                 <Text style={{ color: "#666", marginBottom: 12 }}>
                   (This will become your existing observation modal UI)
@@ -210,11 +246,13 @@ export default function MapRoute() {
                 </Pressable>
 
                 <Pressable
-                  onPress={() => setSheetStage(0)}
+                  onPress={handleSaveTree}
+                  disabled={submitting}
                   style={styles.primaryBtn}
                 >
                   <Text style={styles.primaryBtnText}>Save</Text>
                 </Pressable>
+              </View>
               </>
             ) : null}
           </BottomSheetView>

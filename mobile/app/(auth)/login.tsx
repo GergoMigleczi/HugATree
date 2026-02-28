@@ -163,14 +163,10 @@ export default function LoginScreen() {
                 { backgroundColor: Brand.primary, opacity: pressed || submitting ? 0.75 : 1 },
               ]}
             >
-              {submitting ? (
-                <Text style={styles.submitText}>Signing in…</Text>
-              ) : (
-                <View style={styles.submitInner}>
-                  <Ionicons name="log-in-outline" size={18} color={Brand.white} />
-                  <Text style={styles.submitText}>Sign in</Text>
-                </View>
-              )}
+              <View style={styles.submitInner}>
+                <Ionicons name="log-in-outline" size={18} color={Brand.white} />
+                <Text style={styles.submitText}>Sign in</Text>
+              </View>
             </Pressable>
 
             {/* Divider */}

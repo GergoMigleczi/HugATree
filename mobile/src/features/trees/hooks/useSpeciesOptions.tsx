@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { getSpeciesOptions } from "./trees.api";
-import type { SpeciesOption } from "./trees.types";
+import { getSpeciesOptions } from "../trees.api";
+import type { SpeciesOption } from "../trees.types";
+import { useLoading } from "@/src/ui/loading/LoadingProvider";
 
 type State =
   | { status: "idle" | "loading"; data: null; error: null }
@@ -14,7 +15,9 @@ export function useSpeciesOptions(enabled: boolean) {
     error: null,
   });
 
-  // simple in-memory cache per app session
+  const { withLoading } = useLoading();
+
+  // simple in-memory cache per app session (per hook instance)
   const cacheRef = useRef<SpeciesOption[] | null>(null);
 
   useEffect(() => {
@@ -30,7 +33,11 @@ export function useSpeciesOptions(enabled: boolean) {
 
     (async () => {
       try {
-        const items = await getSpeciesOptions();
+        const items = await withLoading(
+          () => getSpeciesOptions(),
+          { message: "Loading species…", blocking: true, background: "transparent" }
+        );
+
         if (cancelled) return;
         cacheRef.current = items;
         setState({ status: "success", data: items, error: null });
@@ -47,7 +54,7 @@ export function useSpeciesOptions(enabled: boolean) {
     return () => {
       cancelled = true;
     };
-  }, [enabled]);
+  }, [enabled, withLoading]);
 
   return state;
 }
