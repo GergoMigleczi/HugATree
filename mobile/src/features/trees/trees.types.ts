@@ -22,6 +22,33 @@ export type SpeciesApiItem = {
 /* =========================
    Tree
 ========================= */
+export type GetTreesInBboxParams = {
+  minLat: number;
+  minLng: number;
+  maxLat: number;
+  maxLng: number;
+  limit?: number;
+};
+
+export type TreePin = {
+  id: number;
+  latitude: number;
+  longitude: number;
+  speciesId?: number;
+  speciesCommonName?: string;
+};
+
+export type TreesInBboxResponseApi = {
+  items: Array<{
+    id: number;
+    speciesId: number | null;
+    speciesCommonName: string | null;
+    lat: number;
+    lng: number;
+  }>;
+  count: number;
+};
+
 
 // Domain model (what app works with)
 export type Tree = {

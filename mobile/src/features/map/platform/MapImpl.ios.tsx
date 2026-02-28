@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import ClusteredMapViewIOS from "react-native-map-clustering";
 import { Marker } from "react-native-maps";
@@ -18,7 +18,24 @@ type Props = {
   draftMarker?: LatLng | null;
 };
 
-export default function MapImpl({ pins,
+function isFiniteNumber(n: unknown): n is number {
+  return typeof n === "number" && Number.isFinite(n);
+}
+
+function isValidLatLng(x: any): x is LatLng {
+  return (
+    x != null &&
+    isFiniteNumber(x.latitude) &&
+    isFiniteNumber(x.longitude) &&
+    x.latitude >= -90 &&
+    x.latitude <= 90 &&
+    x.longitude >= -180 &&
+    x.longitude <= 180
+  );
+}
+
+export default function MapImpl({
+  pins,
   userLocation,
   onPinPress,
   recenterToken = 0,
@@ -34,13 +51,26 @@ export default function MapImpl({ pins,
   const hasInitiallyCentered = useRef(false);
   const prevRecenterToken = useRef(recenterToken);
 
+  // Only use userLocation if it's valid.
+  const safeUserLocation = isValidLatLng(userLocation) ? userLocation : null;
+
+  // Filter pins to only those with valid coordinates.
+  const safePins = useMemo(() => {
+    return (pins ?? []).filter((p) =>
+      isValidLatLng({ latitude: (p as any).latitude, longitude: (p as any).longitude })
+    );
+  }, [pins]);
+
+  // Only render draft marker if valid.
+  const canRenderDraft = isValidLatLng(draftMarker);
+
   useEffect(() => {
-    if (!userLocation || hasInitiallyCentered.current) return;
+    if (!safeUserLocation || hasInitiallyCentered.current) return;
 
     mapRef.current?.animateToRegion(
       {
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
+        latitude: safeUserLocation.latitude,
+        longitude: safeUserLocation.longitude,
         latitudeDelta: FALLBACK_REGION.latitudeDelta,
         longitudeDelta: FALLBACK_REGION.longitudeDelta,
       },
@@ -48,29 +78,37 @@ export default function MapImpl({ pins,
     );
 
     hasInitiallyCentered.current = true;
-  }, [userLocation]);
+  }, [safeUserLocation]);
 
   useEffect(() => {
     if (prevRecenterToken.current === recenterToken) return;
     prevRecenterToken.current = recenterToken;
 
     setFollowUser(true);
-    if (!userLocation) return;
+    if (!safeUserLocation) return;
 
     mapRef.current?.animateToRegion(
-      { latitude: userLocation.latitude, longitude: userLocation.longitude, ...USER_FOCUS_DELTA },
+      {
+        latitude: safeUserLocation.latitude,
+        longitude: safeUserLocation.longitude,
+        ...USER_FOCUS_DELTA,
+      },
       450
     );
-  }, [recenterToken, userLocation]);
+  }, [recenterToken, safeUserLocation]);
 
   useEffect(() => {
-    if (!followUser || !userLocation) return;
+    if (!followUser || !safeUserLocation) return;
 
     mapRef.current?.animateToRegion(
-      { latitude: userLocation.latitude, longitude: userLocation.longitude, ...USER_FOCUS_DELTA },
+      {
+        latitude: safeUserLocation.latitude,
+        longitude: safeUserLocation.longitude,
+        ...USER_FOCUS_DELTA,
+      },
       450
     );
-  }, [followUser, userLocation]);
+  }, [followUser, safeUserLocation]);
 
   return (
     <View style={styles.container}>
@@ -85,25 +123,33 @@ export default function MapImpl({ pins,
         showsPointsOfInterest={false}
         showsBuildings={false}
         showsUserLocation={true}
-        // drag disables follow
         onPanDrag={() => followUser && setFollowUser(false)}
         onPress={(e) => {
-                if (!pickLocationEnabled) return;
-                const coord = e.nativeEvent.coordinate as LatLng;
-                onMapPress?.(coord);
-              }}
+          if (!pickLocationEnabled) return;
+
+          const coord = e?.nativeEvent?.coordinate;
+          if (!isValidLatLng(coord)) {
+            // Avoid passing invalid coords up (prevents native crashes downstream)
+            // console.log("Invalid map press coordinate:", coord);
+            return;
+          }
+
+          onMapPress?.({ latitude: coord.latitude, longitude: coord.longitude });
+        }}
       >
         {/* Draft marker (user-picked location) */}
-        {draftMarker ? (
+        {canRenderDraft ? (
           <Marker
             key="draft"
-            coordinate={draftMarker}
-            // optional: different pin appearance if you have a custom marker
+            identifier="draft-location"
+            coordinate={{ latitude: draftMarker!.latitude, longitude: draftMarker!.longitude }}
           />
         ) : null}
-        {pins.map((p) => (
+
+        {safePins.map((p) => (
           <Marker
-            key={p.id}
+            key={String(p.id)}
+            identifier={`pin-${p.id}`}
             coordinate={{ latitude: p.latitude, longitude: p.longitude }}
             onPress={() => onPinPress(p)}
           />
