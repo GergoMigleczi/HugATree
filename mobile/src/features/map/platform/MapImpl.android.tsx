@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
-import MapView, { Circle, Marker, Region } from "react-native-maps";
+import MapView, { Marker, Region } from "react-native-maps";
 import { GOOGLE_MAP_STYLE } from "../googleMapStyle";
 import type { Pin } from "../map.types";
 import type { LatLng } from "../../location/hooks/useLiveLocation";
 import { FALLBACK_REGION, USER_FOCUS_DELTA } from "../mapDefaults";
+
 
 function regionToBounds(r: Region): [number, number, number, number] {
   const west = r.longitude - r.longitudeDelta / 2;
@@ -37,6 +38,9 @@ type Props = {
   renderKey?: string | number;
   recenterToken?: number;
   mode?: "full" | "preview";
+  pickLocationEnabled?: boolean;
+  onMapPress?: (coord: LatLng) => void;
+  draftMarker?: LatLng | null;
 };
 
 export default function MapImpl({
@@ -46,6 +50,9 @@ export default function MapImpl({
   recenterToken = 0,
   renderKey = 0,
   mode = "full",
+  pickLocationEnabled = false,
+  onMapPress,
+  draftMarker,
 }: Props) {
   const mapRef = useRef<MapView | null>(null);
   const [region, setRegion] = useState<Region>(FALLBACK_REGION);
@@ -150,8 +157,21 @@ export default function MapImpl({
       }}
       showsPointsOfInterest={false}
       showsBuildings={false}
+      onPress={(e) => {
+        if (!pickLocationEnabled) return;
+        const coord = e.nativeEvent.coordinate as LatLng;
+        onMapPress?.(coord);
+      }}
     >
-
+      {/* Draft marker (user-picked location) */}
+      {draftMarker ? (
+        <Marker
+          key="draft"
+          coordinate={draftMarker}
+          // optional: different pin appearance if you have a custom marker
+        />
+      ) : null}
+      
       {clusters.map((c: any) => {
         const [longitude, latitude] = c.geometry.coordinates as [number, number];
         const isCluster = Boolean(c.properties.cluster);

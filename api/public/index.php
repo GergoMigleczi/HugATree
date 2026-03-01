@@ -15,6 +15,7 @@ use App\Infrastructure\Persistence\PdoTreeRepository;
 use App\Infrastructure\Persistence\PdoObservationRepository;
 use App\Infrastructure\Persistence\PdoTreeDetailHistoryRepository;
 use App\Infrastructure\Persistence\PdoObservationPhotoRepository;
+use App\Infrastructure\Persistence\PdoSpeciesRepository;
 
 use App\Infrastructure\Security\JwtTokenService;
 use App\Infrastructure\Security\PhpPasswordHasher;
@@ -26,6 +27,7 @@ use App\Application\UseCase\RefreshSession;
 use App\Application\UseCase\RegisterUser;
 use App\Application\UseCase\CreateTree;
 use App\Application\UseCase\GetTreesInBbox;
+use App\Application\UseCase\GetSpecies;
 
 use Dotenv\Dotenv;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -39,6 +41,17 @@ $dotenv->load();
 
 $app = AppFactory::create();
 $app->addBodyParsingMiddleware();
+
+// DEV error settings (do NOT enable in prod)
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
+
+$displayErrorDetails = true; // set false in prod
+$logErrors = true;
+$logErrorDetails = true;
+
+$app->addErrorMiddleware($displayErrorDetails, $logErrors, $logErrorDetails);
 
 // --- infrastructure wiring ---
 $pdo = DbConnection::make();
@@ -54,6 +67,7 @@ $treeRepo = new PdoTreeRepository($pdo);
 $observationRepo = new PdoObservationRepository($pdo);
 $treeDetailRepo = new PdoTreeDetailHistoryRepository($pdo);
 $photoRepo = new PdoObservationPhotoRepository($pdo);
+$speciesRepo = new PdoSpeciesRepository($pdo);
 
 // --- use cases ---
 $registerUser = new RegisterUser($userRepo, $passwordHasher);
@@ -62,6 +76,7 @@ $refreshSession = new RefreshSession($sessionRepo, $tokenService);
 $logoutSession = new LogoutSession($sessionRepo);
 $getMe = new GetMe($userRepo);
 $getTreesInBbox = new GetTreesInBbox($treeRepo);
+$getSpecies = new GetSpecies($speciesRepo);
 
 // --- trees use case ---
 $createTree = new CreateTree(
@@ -82,7 +97,7 @@ $app->get("/health", function (Request $req, Response $res) use ($pdo) {
 AuthRoutes::register($app, $registerUser, $loginUser, $refreshSession, $logoutSession);
 MeRoutes::register($app, $getMe);
 
-TreesRoutes::registerPublic($app, $getTreesInBbox);
+TreesRoutes::registerPublic($app, $getTreesInBbox, $getSpecies);
 
 // Protected trees endpoints (JWT required)
 $app->group('', function ($group) use ($createTree) {

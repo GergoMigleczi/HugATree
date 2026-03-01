@@ -24,6 +24,7 @@ export async function apiRequest<T>(path: string, opts: ApiRequestOptions = {}):
 
   let res: Response;
   try {
+    console.log(`API Request: ${method} ${API_URL}${path}`);
     res = await fetch(`${API_URL}${path}`, {
       method,
       headers,
@@ -45,5 +46,6 @@ export async function apiRequest<T>(path: string, opts: ApiRequestOptions = {}):
     throw err;
   }
 
+  console.log(`API Response: ${method} ${API_URL}${path}`, data);
   return data as T;
 }

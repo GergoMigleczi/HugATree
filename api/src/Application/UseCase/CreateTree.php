@@ -48,7 +48,6 @@ final class CreateTree
                 'location_lng' => (float)$tree['locationLng'],
                 'address_text' => $tree['addressText'] ?? null,
                 'created_by_user_id' => $userId,
-                // approval_status default handled by DB
             ]);
 
             $observationId = $this->observations->insert([
@@ -56,8 +55,6 @@ final class CreateTree
                 'created_by_user_id' => $userId,
                 'title' => $obs['title'] ?? null,
                 'note_text' => $obs['noteText'] ?? null,
-                'observed_at' => $obs['observedAt'] ?? null,
-                // approval_status default handled by DB
             ]);
 
             // Optional details -> tree_detail_history
@@ -67,7 +64,6 @@ final class CreateTree
                     'tree_id' => $treeId,
                     'observation_id' => $observationId,
                     'recorded_by_user_id' => $userId,
-                    'recorded_at' => $obs['observedAt'] ?? null, // or NOW()
                     'probable_age_years' => $d['probableAgeYears'] ?? null,
                     'age_basis' => $d['ageBasis'] ?? null,
                     'height_m' => $d['heightM'] ?? null,
