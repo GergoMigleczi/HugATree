@@ -9,6 +9,6 @@ export const FALLBACK_REGION: Region = {
 
 // controls how close “go to my location” zooms
 export const USER_FOCUS_DELTA = {
-  latitudeDelta: 0.004,
-  longitudeDelta: 0.004,
+  latitudeDelta: 0.0015,
+  longitudeDelta: 0.0015,
 };

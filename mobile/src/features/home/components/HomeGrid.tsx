@@ -25,7 +25,6 @@ type GridItemBase = {
 export type GridItem =
   | (GridItemBase & {
       type: "map";
-      pins: Pin[];
       title?: string;
       subtitle?: string;
       onPress: () => void;
@@ -76,7 +75,6 @@ export function HomeGrid({ items }: Props) {
               <MapPreviewTile
                 width={width}
                 height={height}
-                pins={it.pins}
                 onPress={it.onPress}
               />
             ) : (

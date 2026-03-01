@@ -63,21 +63,6 @@ export default function HomeScreen() {
   const subCol   = isDark ? Brand.softGray : Brand.midGray;
   const borderCl = isDark ? Brand.deep     : Brand.pale;
 
-  const [pins, setPins] = useState<Pin[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await getPins();
-        if (!cancelled) setPins(data);
-      } catch {
-        if (!cancelled) setPins([]);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
   async function handleLogout() {
     try {
       await logout();
@@ -94,7 +79,6 @@ export default function HomeScreen() {
       id:      "map-preview",
       cols:    2,
       rows:    2,
-      pins,
       onPress: () => router.push("/map"),
     },
     {
@@ -171,7 +155,7 @@ export default function HomeScreen() {
           <View style={[styles.statPill, { backgroundColor: cardBg, borderColor: borderCl }]}>
             <Ionicons name="leaf" size={14} color={Brand.primary} />
             <Text style={[styles.statLabel, { color: textCol }]}>
-              {pins.length} <Text style={{ color: subCol }}>trees</Text>
+              {50} <Text style={{ color: subCol }}>trees</Text>
             </Text>
           </View>
           <View style={[styles.statPill, { backgroundColor: cardBg, borderColor: borderCl }]}>
