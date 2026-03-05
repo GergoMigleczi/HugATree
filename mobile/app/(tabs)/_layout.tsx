@@ -25,6 +25,7 @@
 
 import { Redirect, Stack, Tabs } from "expo-router";
 import { useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/src/features/auth/AuthProvider";
 import { useLoading } from "@/src/ui/loading/LoadingProvider";
 
@@ -52,6 +53,31 @@ export default function TabsLayout() {
   // Not authenticated — redirect to login
   if (!isLoggedIn) return <Redirect href="/(auth)/login" />;
 
-  // Authenticated — render tab navigator without a shared header
-  return <Tabs screenOptions={{ headerShown: false }} />;
+  // Authenticated — render tab navigator with named tabs and icons.
+  // Each <Tabs.Screen> overrides the auto-generated label (e.g. "index", "map expo")
+  // with a human-readable title and a matching Ionicons glyph.
+  return (
+    <Tabs screenOptions={{ headerShown: false }}>
+      {/* Home tab */}
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      {/* Map tab */}
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: "Map",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="map-outline" size={size} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
 }
