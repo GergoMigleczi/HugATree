@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -23,6 +23,8 @@ import {
   type ObservationItem,
 } from "@/src/features/observations/observations.types";
 import { useLoading } from "@/src/ui/loading/LoadingProvider";
+import { getTreeDetailsApi } from "@/src/features/trees/trees.api";
+import type { TreeDetail } from "@/src/features/trees/trees.types";
 
 /* ─── Tab definitions ──────────────────────────────────────────────────────── */
 
@@ -52,6 +54,8 @@ export default function TreeModalScreen() {
   const [observations, setObservations] = useState<ObservationItem[] | null>(null);
   const [loadError,    setLoadError]   = useState<string | null>(null);
   const [formData,     setFormData]    = useState<ObservationFormData>(EMPTY_OBSERVATION_FORM);
+  const [details,      setDetails]     = useState<TreeDetail | null | "loading" | "error">(null);
+  const detailsFetched = useRef(false);
 
   /* ── Load observations ─────────────────────────────────────────────────── */
   useEffect(() => {
@@ -80,6 +84,12 @@ export default function TreeModalScreen() {
       );
       const items = await getTreeObservationsApi(numericTreeId);
       setObservations(items);
+      if (tab === "details") {
+        detailsFetched.current = false;
+        getTreeDetailsApi(numericTreeId)
+          .then((d) => setDetails(d))
+          .catch(() => setDetails("error"));
+      }
       setFormData(EMPTY_OBSERVATION_FORM);
       setMode("view");
     } catch (e: any) {
@@ -91,6 +101,16 @@ export default function TreeModalScreen() {
     setFormData(EMPTY_OBSERVATION_FORM);
     setMode("view");
   }
+
+  /* ── Load details (lazy, once) ─────────────────────────────────────────── */
+  useEffect(() => {
+    if (tab !== "details" || !numericTreeId || detailsFetched.current) return;
+    detailsFetched.current = true;
+    setDetails("loading");
+    getTreeDetailsApi(numericTreeId)
+      .then((d) => setDetails(d))
+      .catch(() => setDetails("error"));
+  }, [tab, numericTreeId]);
 
   const isStubTab = STUB_TABS.includes(tab);
 
@@ -114,7 +134,12 @@ export default function TreeModalScreen() {
             </Text>
           </View>
 
-          {mode === "view" && !isStubTab ? (
+          {mode === "view" && !isStubTab && tab === "details" ? (
+            <Pressable onPress={() => setMode("add")} style={styles.addBtn} hitSlop={8}>
+              <Ionicons name="pencil-outline" size={14} color={Brand.white} />
+              <Text style={styles.addBtnText}>Update</Text>
+            </Pressable>
+          ) : mode === "view" && !isStubTab ? (
             <Pressable onPress={() => setMode("add")} style={styles.addBtn} hitSlop={8}>
               <Ionicons name="add" size={16} color={Brand.white} />
               <Text style={styles.addBtnText}>Add note</Text>
@@ -153,10 +178,11 @@ export default function TreeModalScreen() {
         </View>
       )}
 
-      {/* View mode — observation list */}
+      {/* View mode */}
       {mode === "view" && (
         <>
-          {isStubTab ? (
+          {/* Stub tabs */}
+          {isStubTab && (
             <View style={styles.stubWrap}>
               <Ionicons name="construct-outline" size={32} color={Brand.softGray} />
               <Text style={styles.stubTitle}>Coming soon</Text>
@@ -164,7 +190,55 @@ export default function TreeModalScreen() {
                 This tab requires a future database migration.
               </Text>
             </View>
-          ) : (
+          )}
+
+          {/* Details tab */}
+          {!isStubTab && tab === "details" && (
+            <ScrollView contentContainerStyle={styles.listContent}>
+              {details === "loading" && (
+                <ActivityIndicator style={styles.spinner} color={Brand.primary} />
+              )}
+              {details === "error" && (
+                <Text style={styles.errorText}>Could not load details.</Text>
+              )}
+              {(details === null || details === "loading" || details === "error") ? null : (
+                <View style={styles.detailsCard}>
+                  <DetailRow label="Height" value={details.heightM != null ? `${details.heightM} m` : null} sub={details.heightMethod} />
+                  <DetailRow label="Trunk diameter" value={details.trunkDiameterCm != null ? `${details.trunkDiameterCm} cm` : null} sub={[details.diameterHeightCm != null ? `@ ${details.diameterHeightCm} cm` : null, details.diameterMethod].filter(Boolean).join(" · ")} />
+                  <DetailRow label="Canopy diameter" value={details.canopyDiameterM != null ? `${details.canopyDiameterM} m` : null} sub={details.canopyDensity} />
+                  <DetailRow label="Est. age" value={details.probableAgeYears != null ? `${details.probableAgeYears} yrs` : null} sub={details.ageBasis} />
+                  {(details.recordedByName || details.recordedAt) && (
+                    <View style={styles.detailsFooter}>
+                      {details.recordedByName && (
+                        <View style={styles.detailsFooterItem}>
+                          <Ionicons name="person-outline" size={11} color={Brand.softGray} />
+                          <Text style={styles.detailsFooterText}>{details.recordedByName}</Text>
+                        </View>
+                      )}
+                      {details.recordedAt && (
+                        <View style={styles.detailsFooterItem}>
+                          <Ionicons name="calendar-outline" size={11} color={Brand.softGray} />
+                          <Text style={styles.detailsFooterText}>
+                            {new Date(details.recordedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
+              )}
+              {details === null && (
+                <View style={styles.emptyWrap}>
+                  <Ionicons name="resize-outline" size={32} color={Brand.softGray} />
+                  <Text style={styles.emptyText}>No measurements yet.</Text>
+                  <Text style={styles.emptySub}>Measurements are recorded with observations.</Text>
+                </View>
+              )}
+            </ScrollView>
+          )}
+
+          {/* Overview + History tabs — observation list */}
+          {!isStubTab && tab !== "details" && (
             <ScrollView contentContainerStyle={styles.listContent}>
               {loadError && (
                 <Text style={styles.errorText}>{loadError}</Text>
@@ -183,7 +257,7 @@ export default function TreeModalScreen() {
               )}
 
               {(observations ?? []).map((obs, idx) => (
-                <ObservationCard key={obs.id} item={obs} isInitial={idx === 0} />
+                <ObservationCard key={obs.id} item={obs} isInitial={tab === "overview" && idx === 0} />
               ))}
             </ScrollView>
           )}
@@ -193,7 +267,7 @@ export default function TreeModalScreen() {
       {/* Add mode — reusable ObservationForm */}
       {mode === "add" && (
         <>
-          <ObservationForm value={formData} onChange={setFormData} />
+          <ObservationForm value={formData} onChange={setFormData} initialTab={tab === "details" ? "details" : "note"} />
 
           <View style={styles.formFooter}>
             <Pressable onPress={cancelAdd} style={styles.secondaryBtn}>
@@ -206,6 +280,22 @@ export default function TreeModalScreen() {
         </>
       )}
 
+    </View>
+  );
+}
+
+/* ─── Detail row helper ────────────────────────────────────────────────────── */
+
+function DetailRow({ label, value, sub }: { label: string; value: string | null; sub?: string | null }) {
+  return (
+    <View style={styles.detailRow}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <View style={styles.detailRight}>
+        <Text style={[styles.detailValue, !value && styles.detailValueEmpty]}>
+          {value ?? "—"}
+        </Text>
+        {sub ? <Text style={styles.detailSub}>{sub}</Text> : null}
+      </View>
     </View>
   );
 }
@@ -278,6 +368,64 @@ const styles = StyleSheet.create({
   stubWrap:  { flex: 1, alignItems: "center", justifyContent: "center", gap: 8 },
   stubTitle: { fontSize: 15, fontWeight: "700", color: Brand.softGray },
   stubSub:   { fontSize: 12, color: Brand.softGray, textAlign: "center", lineHeight: 18 },
+
+  detailsCard: {
+    backgroundColor: Brand.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Brand.pale,
+    overflow: "hidden",
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Brand.pale,
+  },
+  detailLabel: {
+    fontSize: 13,
+    color: Brand.midGray,
+    fontWeight: "500",
+    flex: 1,
+  },
+  detailRight: {
+    alignItems: "flex-end",
+    flex: 1,
+  },
+  detailValue: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Brand.charcoal,
+    textAlign: "right",
+  },
+  detailValueEmpty: {
+    color: Brand.softGray,
+    fontWeight: "400",
+  },
+  detailSub: {
+    fontSize: 11,
+    color: Brand.softGray,
+    marginTop: 2,
+    textAlign: "right",
+  },
+  detailsFooter: {
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  detailsFooterItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  detailsFooterText: {
+    fontSize: 11,
+    color: Brand.softGray,
+  },
 
   formFooter: {
     flexDirection: "row",
