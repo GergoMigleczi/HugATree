@@ -30,6 +30,7 @@ use App\Application\UseCase\GetTreesInBbox;
 use App\Application\UseCase\GetSpecies;
 use App\Application\UseCase\GetTreeObservations;
 use App\Application\UseCase\AddObservation;
+use App\Application\UseCase\GetTreeDetails;
 
 use Dotenv\Dotenv;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -81,6 +82,7 @@ $getTreesInBbox = new GetTreesInBbox($treeRepo);
 $getSpecies = new GetSpecies($speciesRepo);
 $getTreeObservations = new GetTreeObservations($observationRepo);
 $addObservation = new AddObservation($tx, $observationRepo, $treeDetailRepo);
+$getTreeDetails = new GetTreeDetails($treeDetailRepo);
 
 // --- trees use case ---
 $createTree = new CreateTree(
@@ -104,8 +106,8 @@ MeRoutes::register($app, $getMe);
 TreesRoutes::registerPublic($app, $getTreesInBbox, $getSpecies);
 
 // Protected trees endpoints (JWT required)
-$app->group('', function ($group) use ($createTree, $getTreeObservations, $addObservation) {
-  TreesRoutes::registerProtected($group, $createTree, $getTreeObservations, $addObservation);
+$app->group('', function ($group) use ($createTree, $getTreeObservations, $addObservation, $getTreeDetails) {
+  TreesRoutes::registerProtected($group, $createTree, $getTreeObservations, $addObservation, $getTreeDetails);
 })->add(new AuthMiddleware());
 
 $app->run();
