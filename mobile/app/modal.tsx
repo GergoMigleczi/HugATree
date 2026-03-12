@@ -25,20 +25,20 @@ import {
 import { useLoading } from "@/src/ui/loading/LoadingProvider";
 import { getTreeDetailsApi } from "@/src/features/trees/trees.api";
 import type { TreeDetail } from "@/src/features/trees/trees.types";
+import TabBar, { type TabDef } from "@/src/ui/TabBar";
+import EmptyState from "@/src/ui/EmptyState";
 
 /* ─── Tab definitions ──────────────────────────────────────────────────────── */
 
 type TabId = "overview" | "details" | "history" | "wildlife" | "health";
 
-const TABS: { id: TabId; label: string; icon: React.ComponentProps<typeof Ionicons>["name"] }[] = [
-  { id: "overview",  label: "Overview",  icon: "list-outline"          },
-  { id: "details",   label: "Details",   icon: "resize-outline"        },
-  { id: "history",   label: "History",   icon: "calendar-outline"      },
-  { id: "wildlife",  label: "Wildlife",  icon: "leaf-outline"          },
-  { id: "health",    label: "Health",    icon: "heart-outline"         },
+const TABS: TabDef<TabId>[] = [
+  { id: "overview",  label: "Overview",  icon: "list-outline"     },
+  { id: "details",   label: "Details",   icon: "resize-outline"   },
+  { id: "history",   label: "History",   icon: "calendar-outline" },
+  { id: "wildlife",  label: "Wildlife",  icon: "leaf-outline",  stub: true },
+  { id: "health",    label: "Health",    icon: "heart-outline", stub: true },
 ];
-
-const STUB_TABS: TabId[] = ["wildlife", "health"];
 
 /* ─── Screen ───────────────────────────────────────────────────────────────── */
 
@@ -112,7 +112,7 @@ export default function TreeModalScreen() {
       .catch(() => setDetails("error"));
   }, [tab, numericTreeId]);
 
-  const isStubTab = STUB_TABS.includes(tab);
+  const isStubTab = TABS.find((t) => t.id === tab)?.stub === true;
 
   /* ── Render ────────────────────────────────────────────────────────────── */
   return (
@@ -154,28 +154,7 @@ export default function TreeModalScreen() {
 
       {/* Tab bar — hidden while in add mode */}
       {mode === "view" && (
-        <View style={styles.tabBar}>
-          {TABS.map((t) => {
-            const isStub   = STUB_TABS.includes(t.id);
-            const isActive = tab === t.id;
-            return (
-              <Pressable
-                key={t.id}
-                onPress={() => setTab(t.id)}
-                style={[styles.tabItem, isActive && styles.tabItemActive, isStub && styles.tabStub]}
-              >
-                <Ionicons
-                  name={t.icon}
-                  size={13}
-                  color={isActive ? Brand.primary : Brand.softGray}
-                />
-                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
-                  {t.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <TabBar tabs={TABS} activeTab={tab} onChange={setTab} />
       )}
 
       {/* View mode */}
@@ -184,11 +163,11 @@ export default function TreeModalScreen() {
           {/* Stub tabs */}
           {isStubTab && (
             <View style={styles.stubWrap}>
-              <Ionicons name="construct-outline" size={32} color={Brand.softGray} />
-              <Text style={styles.stubTitle}>Coming soon</Text>
-              <Text style={styles.stubSub}>
-                This tab requires a future database migration.
-              </Text>
+              <EmptyState
+                icon="construct-outline"
+                title="Coming soon"
+                subtitle="This tab requires a future database migration."
+              />
             </View>
           )}
 
@@ -228,11 +207,11 @@ export default function TreeModalScreen() {
                 </View>
               )}
               {details === null && (
-                <View style={styles.emptyWrap}>
-                  <Ionicons name="resize-outline" size={32} color={Brand.softGray} />
-                  <Text style={styles.emptyText}>No measurements yet.</Text>
-                  <Text style={styles.emptySub}>Measurements are recorded with observations.</Text>
-                </View>
+                <EmptyState
+                  icon="resize-outline"
+                  title="No measurements yet."
+                  subtitle="Measurements are recorded with observations."
+                />
               )}
             </ScrollView>
           )}
@@ -249,11 +228,11 @@ export default function TreeModalScreen() {
               )}
 
               {!loadError && observations !== null && observations.length === 0 && (
-                <View style={styles.emptyWrap}>
-                  <Ionicons name="leaf-outline" size={32} color={Brand.softGray} />
-                  <Text style={styles.emptyText}>No observations yet.</Text>
-                  <Text style={styles.emptySub}>Tap "Add note" to be the first.</Text>
-                </View>
+                <EmptyState
+                  icon="leaf-outline"
+                  title="No observations yet."
+                  subtitle={'Tap "Add note" to be the first.'}
+                />
               )}
 
               {(observations ?? []).map((obs, idx) => (
@@ -335,25 +314,7 @@ const styles = StyleSheet.create({
   cancelBtn:     { paddingHorizontal: 12, paddingVertical: 8 },
   cancelBtnText: { fontSize: 13, fontWeight: "600", color: Brand.midGray },
 
-  tabBar: {
-    flexDirection: "row",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Brand.pale,
-    paddingHorizontal: 4,
-  },
-  tabItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
-  },
-  tabItemActive: { borderBottomColor: Brand.primary },
-  tabStub:       { opacity: 0.4 },
-  tabLabel:      { fontSize: 11, fontWeight: "700", color: Brand.softGray },
-  tabLabelActive:{ color: Brand.primary },
+  stubWrap: { flex: 1 },
 
   listContent: { padding: 16, gap: 10, paddingBottom: 32 },
   spinner:     { marginTop: 40 },
@@ -361,13 +322,6 @@ const styles = StyleSheet.create({
   errorText: {
     color: "#ef4444", fontSize: 13, textAlign: "center", marginTop: 40, lineHeight: 20,
   },
-  emptyWrap: { alignItems: "center", paddingTop: 48, gap: 8 },
-  emptyText: { fontSize: 15, fontWeight: "700", color: Brand.softGray },
-  emptySub:  { fontSize: 12, color: Brand.softGray },
-
-  stubWrap:  { flex: 1, alignItems: "center", justifyContent: "center", gap: 8 },
-  stubTitle: { fontSize: 15, fontWeight: "700", color: Brand.softGray },
-  stubSub:   { fontSize: 12, color: Brand.softGray, textAlign: "center", lineHeight: 18 },
 
   detailsCard: {
     backgroundColor: Brand.white,

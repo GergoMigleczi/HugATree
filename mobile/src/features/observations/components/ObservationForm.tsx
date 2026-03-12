@@ -1,30 +1,28 @@
 import React, { useState } from "react";
 import {
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { Brand } from "@/constants/theme";
 import type { ObservationFormData, TreeDetailsFormData } from "../observations.types";
 import { EMPTY_DETAILS } from "../observations.types";
+import TabBar, { type TabDef } from "@/src/ui/TabBar";
+import EmptyState from "@/src/ui/EmptyState";
 
 /* ─── Tab definitions ──────────────────────────────────────────────────────── */
 
 type TabId = "note" | "details" | "photos" | "wildlife" | "health";
 
-const TABS: { id: TabId; label: string; icon: React.ComponentProps<typeof Ionicons>["name"] }[] = [
-  { id: "note",     label: "Note",     icon: "document-text-outline" },
-  { id: "details",  label: "Details",  icon: "resize-outline"        },
-  { id: "photos",   label: "Photos",   icon: "camera-outline"        },
-  { id: "wildlife", label: "Wildlife", icon: "leaf-outline"          },
-  { id: "health",   label: "Health",   icon: "heart-outline"         },
+const TABS: TabDef<TabId>[] = [
+  { id: "note",     label: "Note",     icon: "document-text-outline"              },
+  { id: "details",  label: "Details",  icon: "resize-outline"                     },
+  { id: "photos",   label: "Photos",   icon: "camera-outline",  stub: true },
+  { id: "wildlife", label: "Wildlife", icon: "leaf-outline",    stub: true },
+  { id: "health",   label: "Health",   icon: "heart-outline",   stub: true },
 ];
-
-const STUB_TABS: TabId[] = ["photos", "wildlife", "health"];
 
 /* ─── Props ────────────────────────────────────────────────────────────────── */
 
@@ -59,34 +57,7 @@ export default function ObservationForm({ value, onChange, isNewTree, initialTab
   return (
     <View style={styles.container}>
       {/* Tab bar */}
-      <View style={styles.tabBar}>
-        {TABS.map((tab) => {
-          const isStub   = STUB_TABS.includes(tab.id);
-          const isActive = activeTab === tab.id;
-          return (
-            <Pressable
-              key={tab.id}
-              onPress={() => !isStub && setActiveTab(tab.id)}
-              style={[styles.tab, isActive && styles.tabActive, isStub && styles.tabStub]}
-            >
-              <Ionicons
-                name={tab.icon}
-                size={14}
-                color={isStub ? Brand.softGray : isActive ? Brand.primary : Brand.midGray}
-              />
-              <Text
-                style={[
-                  styles.tabLabel,
-                  isActive && styles.tabLabelActive,
-                  isStub  && styles.tabLabelStub,
-                ]}
-              >
-                {tab.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <TabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
 
       {/* Tab content */}
       <ScrollView
@@ -234,7 +205,13 @@ export default function ObservationForm({ value, onChange, isNewTree, initialTab
         )}
 
         {/* ── Stub tabs ── */}
-        {STUB_TABS.includes(activeTab) && <StubTab />}
+        {TABS.find((t) => t.id === activeTab)?.stub && (
+          <EmptyState
+            icon="construct-outline"
+            title="Coming soon"
+            subtitle="This tab requires a future database migration."
+          />
+        )}
       </ScrollView>
     </View>
   );
@@ -282,43 +259,10 @@ function ChipSelect({
   );
 }
 
-/* ─── StubTab ──────────────────────────────────────────────────────────────── */
-
-function StubTab() {
-  return (
-    <View style={styles.stub}>
-      <Ionicons name="construct-outline" size={28} color={Brand.softGray} />
-      <Text style={styles.stubText}>Coming soon</Text>
-      <Text style={styles.stubSub}>This tab requires a future database migration.</Text>
-    </View>
-  );
-}
-
 /* ─── Styles ───────────────────────────────────────────────────────────────── */
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-
-  tabBar: {
-    flexDirection: "row",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Brand.pale,
-    paddingHorizontal: 4,
-  },
-  tab: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
-  },
-  tabActive: { borderBottomColor: Brand.primary },
-  tabStub:   { opacity: 0.4 },
-  tabLabel:      { fontSize: 11, fontWeight: "600", color: Brand.midGray },
-  tabLabelActive:{ color: Brand.primary },
-  tabLabelStub:  { color: Brand.softGray },
 
   scroll: { flex: 1 },
   scrollContent: { padding: 16, gap: 14, paddingBottom: 32 },
@@ -365,8 +309,4 @@ const styles = StyleSheet.create({
   chipSelected: { backgroundColor: Brand.primary, borderColor: Brand.primary },
   chipText:         { fontSize: 12, color: Brand.midGray },
   chipTextSelected: { color: Brand.white, fontWeight: "700" },
-
-  stub: { alignItems: "center", paddingTop: 48, gap: 8 },
-  stubText: { fontSize: 15, fontWeight: "700", color: Brand.softGray },
-  stubSub:  { fontSize: 12, color: Brand.softGray, textAlign: "center", lineHeight: 18 },
 });
