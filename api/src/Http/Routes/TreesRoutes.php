@@ -8,6 +8,7 @@ use App\Application\UseCase\GetTreesInBbox;
 use App\Application\UseCase\GetSpecies;
 use App\Application\UseCase\GetTreeObservations;
 use App\Application\UseCase\AddObservation;
+use App\Application\UseCase\GetTreeDetails;
 use App\Http\Json;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -60,9 +61,26 @@ final class TreesRoutes
         $routes,
         CreateTree $createTree,
         GetTreeObservations $getTreeObservations,
-        AddObservation $addObservation
+        AddObservation $addObservation,
+        GetTreeDetails $getTreeDetails
     ): void
     {
+        // GET /trees/:id/details (JWT required)
+        $routes->get('/trees/{id}/details', function (Request $req, Response $res, array $args) use ($getTreeDetails) {
+            $treeId = (int)($args['id'] ?? 0);
+            if ($treeId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid tree id'], 400);
+            }
+            try {
+                $result = $getTreeDetails->execute($treeId);
+                return Json::ok($res, $result ?? [], 200);
+            } catch (\Throwable $e) {
+                error_log('[GET /trees/' . $treeId . '/details] ' . $e->getMessage());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+
+
         // GET /trees/:id/observations (JWT required)
         $routes->get('/trees/{id}/observations', function (Request $req, Response $res, array $args) use ($getTreeObservations) {
             $treeId = (int)($args['id'] ?? 0);
