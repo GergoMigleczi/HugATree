@@ -33,12 +33,14 @@ type Props = {
   onChange: (next: ObservationFormData) => void;
   /** Shows an amber notice that this is the first (initial) observation */
   isNewTree?: boolean;
+  /** Which sub-tab to open first */
+  initialTab?: TabId;
 };
 
 /* ─── Component ────────────────────────────────────────────────────────────── */
 
-export default function ObservationForm({ value, onChange, isNewTree }: Props) {
-  const [activeTab, setActiveTab] = useState<TabId>("note");
+export default function ObservationForm({ value, onChange, isNewTree, initialTab }: Props) {
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab ?? "note");
 
   function setField<K extends keyof ObservationFormData>(
     key: K,
