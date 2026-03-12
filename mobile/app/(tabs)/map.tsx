@@ -8,8 +8,8 @@ import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated"
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
 import MapImpl from "../../src/features/map/platform/MapImpl";
-import { getPins } from "../../src/features/map/map.api";
 import type { Pin } from "../../src/features/map/map.types";
+import { getTreesInBboxApi } from "@/src/features/trees/trees.api";
 import { usePinPress } from "../../src/features/map/usePinPress";
 import { useLiveLocation } from "../../src/features/location/hooks/useLiveLocation";
 import BackToCurrentLocationButton from "../../src/features/map/components/BackToCurrentLocationButton";
@@ -31,6 +31,7 @@ export default function MapRoute() {
 
   const [pins, setPins] = useState<Pin[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pinsVersion, setPinsVersion] = useState(0);
   const [recenterToken, setRecenterToken] = useState(0);
     const [submitting, setSubmitting]   = useState(false);
 
@@ -98,6 +99,7 @@ export default function MapRoute() {
       );
       Alert.alert("Tree added", "Your tree has been added successfully.");
       closeSheet();
+      setPinsVersion((v) => v + 1);
     } catch (e: any) {
       Alert.alert("Failed to save tree", e.message ?? "Please try again.");
     } finally {
@@ -109,8 +111,8 @@ export default function MapRoute() {
     let cancelled = false;
     (async () => {
       try {
-        const data = await getPins();
-        if (!cancelled) setPins(data);
+        const data = await getTreesInBboxApi({ minLat: -90, minLng: -180, maxLat: 90, maxLng: 180, limit: 5000 });
+        if (!cancelled) setPins(data.items.map((t) => ({ id: String(t.id), latitude: t.latitude, longitude: t.longitude })));
       } catch (e: any) {
         if (!cancelled) setError(e?.message ?? "Failed to load pins");
       }
@@ -118,7 +120,7 @@ export default function MapRoute() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [pinsVersion]);
 
   // Animate the map container height based on the sheet stage.
   // Skeleton/simple version: closed => 100%, open at 35% => 65%, full => 0% (map hidden)
