@@ -132,3 +132,22 @@ export type CreateTreeResponseApi = {
   treeId: number;
   observationId: number;
 };
+
+/* =========================
+   Tree Detail (latest measurements)
+========================= */
+export type TreeDetail = {
+  id: number;
+  observationId: number;
+  probableAgeYears: number | null;
+  ageBasis: string | null;
+  heightM: number | null;
+  heightMethod: string | null;
+  trunkDiameterCm: number | null;
+  diameterHeightCm: number | null;
+  diameterMethod: string | null;
+  canopyDiameterM: number | null;
+  canopyDensity: string | null;
+  recordedAt: string | null;
+  recordedByName: string | null;
+};
