@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import {
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Brand } from "@/constants/theme";
 import type { ObservationFormData, TreeDetailsFormData } from "../observations.types";
 import { EMPTY_DETAILS } from "../observations.types";

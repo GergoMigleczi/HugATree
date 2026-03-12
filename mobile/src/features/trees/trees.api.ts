@@ -50,7 +50,7 @@ export async function getTreesInBboxApi(params: GetTreesInBboxParams): Promise<{
     count: res.items.length,
     total: res.count,
     limit,
-    hasMore: res.count > res.items.length ? true : false,
+    hasMore: res.count > res.items.length,
   };
 }
 
