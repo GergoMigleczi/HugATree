@@ -15,8 +15,11 @@ export async function createTreeApi(input: CreateTreeInput): Promise<CreateTreeR
   return authFetch<CreateTreeResponseApi>("/trees", {
     method: "POST",
     body: {
-        tree: input.tree,
-        observation: input.observation,
+      tree: input.tree,
+      observation: {
+        ...input.observation,
+        ...(input.details ? { details: input.details } : {}),
+      },
     },
   });
 }
