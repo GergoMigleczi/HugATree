@@ -106,11 +106,25 @@ export type CreateTreeInput = {
         addressText?: string; // optional
     }
     observation: CreateObservationInput;
+    details?: TreeDetailHistoryInput;
 };
 
 export type CreateObservationInput = {
     title?: string;
     noteText?: string;
+    observedAt?: string; // ISO timestamp
+};
+
+export type TreeDetailHistoryInput = {
+    probableAgeYears?: number;
+    ageBasis?: string;
+    heightM?: number;
+    heightMethod?: string;
+    trunkDiameterCm?: number;
+    diameterHeightCm?: number;
+    diameterMethod?: string;
+    canopyDiameterM?: number;
+    canopyDensity?: string;
 };
 
 // What backend returns
