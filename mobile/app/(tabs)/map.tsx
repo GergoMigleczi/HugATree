@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated";
-import BottomSheet, { BottomSheetScrollView, BottomSheetView } from "@gorhom/bottom-sheet";
+import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
 import MapImpl from "../../src/features/map/platform/MapImpl";
 import { getPins } from "../../src/features/map/map.api";
