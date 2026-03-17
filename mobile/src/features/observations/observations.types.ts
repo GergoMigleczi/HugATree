@@ -23,6 +23,31 @@ export type ObservationFormData = {
   details: TreeDetailsFormData;
 };
 
+export type WildlifeFormData = {
+  wildlifeSpeciesId: string; // "123" or "" if not selected — string for controlled inputs
+  lifeStage: string;
+  count: string;
+  evidenceType: string;
+  behaviour: string;
+};
+
+export type HealthIssueFormData = {
+  issueType: string;
+  issueName: string;
+  affectedPart: string;
+  severity: string;
+};
+
+export type HealthFormData = {
+  healthStatus: string;
+  riskLevel: string;
+  issues: HealthIssueFormData[];
+};
+
+/* =========================
+   Empty form constants
+========================= */
+
 export const EMPTY_DETAILS: TreeDetailsFormData = {
   probableAgeYears: "",
   ageBasis: "",
@@ -40,6 +65,27 @@ export const EMPTY_OBSERVATION_FORM: ObservationFormData = {
   noteText: "",
   observedAt: "",
   details: EMPTY_DETAILS,
+};
+
+export const EMPTY_WILDLIFE_FORM: WildlifeFormData = {
+  wildlifeSpeciesId: "",
+  lifeStage: "",
+  count: "",
+  evidenceType: "",
+  behaviour: "",
+};
+
+export const EMPTY_HEALTH_ISSUE: HealthIssueFormData = {
+  issueType: "",
+  issueName: "",
+  affectedPart: "",
+  severity: "",
+};
+
+export const EMPTY_HEALTH_FORM: HealthFormData = {
+  healthStatus: "",
+  riskLevel: "",
+  issues: [],
 };
 
 /* =========================
@@ -67,7 +113,7 @@ export function buildDetailsPayload(
 }
 
 /* =========================
-   API response shape
+   API response shapes
 ========================= */
 
 // A single observation as returned by GET /trees/:id/observations
@@ -83,5 +129,58 @@ export type ObservationItem = {
 
 // Response from POST /trees/:id/observations
 export type CreateObservationResponseApi = {
+  observationId: number;
+};
+
+// A single wildlife record as returned by GET /trees/:id/wildlife
+// Includes the linked observation fields so ObservationCard can be reused
+export type WildlifeItem = {
+  id: number;
+  wildlifeSpeciesId: number;
+  wildlifeSpeciesName: string;
+  lifeStage: string;
+  count: number | null;
+  evidenceType: string;
+  behaviour: string | null;
+  // linked observation fields
+  observationId: number;
+  title: string | null;
+  noteText: string | null;
+  observedAt: string | null;
+  createdAt: string;
+  authorName: string | null;
+  photoKey: string | null;
+};
+
+// Response from POST /trees/:id/wildlife
+export type CreateWildlifeResponseApi = {
+  wildlifeId: number;
+  observationId: number;
+};
+
+// A single health record as returned by GET /trees/:id/health
+export type HealthItem = {
+  id: number;
+  healthStatus: string;
+  riskLevel: string;
+  issues: Array<{
+    issueType: string;
+    issueName: string;
+    affectedPart: string;
+    severity: string;
+  }>;
+  // linked observation fields
+  observationId: number;
+  title: string | null;
+  noteText: string | null;
+  observedAt: string | null;
+  createdAt: string;
+  authorName: string | null;
+  photoKey: string | null;
+};
+
+// Response from POST /trees/:id/health
+export type CreateHealthResponseApi = {
+  healthId: number;
   observationId: number;
 };
