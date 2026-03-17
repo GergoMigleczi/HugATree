@@ -9,21 +9,29 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Brand } from "@/constants/theme";
-import type { ObservationFormData, TreeDetailsFormData } from "../observations.types";
-import { EMPTY_DETAILS } from "../observations.types";
+import type {
+  ObservationFormData,
+  TreeDetailsFormData,
+  WildlifeFormData,
+  HealthFormData,
+} from "../observations.types";
+import { EMPTY_DETAILS, EMPTY_HEALTH_ISSUE } from "../observations.types";
 import TabBar, { type TabDef } from "@/src/ui/TabBar";
 import EmptyState from "@/src/ui/EmptyState";
+import ChipSelect from "@/src/ui/ChipSelect";
+import SpeciesSelect from "@/src/features/trees/components/SpeciesSelect";
+import { useWildlifeSpeciesOptions } from "../hooks/useWildlifeSpeciesOptions";
 
 /* ─── Tab definitions ──────────────────────────────────────────────────────── */
 
 type TabId = "note" | "details" | "photos" | "wildlife" | "health";
 
 const TABS: TabDef<TabId>[] = [
-  { id: "note",     label: "Note",     icon: "document-text-outline"              },
-  { id: "details",  label: "Details",  icon: "resize-outline"                     },
-  { id: "photos",   label: "Photos",   icon: "camera-outline",  stub: true },
-  { id: "wildlife", label: "Wildlife", icon: "leaf-outline",    stub: true },
-  { id: "health",   label: "Health",   icon: "heart-outline",   stub: true },
+  { id: "note",     label: "Note",     icon: "document-text-outline"          },
+  { id: "details",  label: "Details",  icon: "resize-outline"                 },
+  { id: "photos",   label: "Photos",   icon: "camera-outline",   stub: true   },
+  { id: "wildlife", label: "Wildlife", icon: "leaf-outline"                   },
+  { id: "health",   label: "Health",   icon: "heart-outline"                  },
 ];
 
 /* ─── Props ────────────────────────────────────────────────────────────────── */
@@ -31,6 +39,10 @@ const TABS: TabDef<TabId>[] = [
 type Props = {
   value: ObservationFormData;
   onChange: (next: ObservationFormData) => void;
+  wildlifeValue: WildlifeFormData;
+  onWildlifeChange: (next: WildlifeFormData) => void;
+  healthValue: HealthFormData;
+  onHealthChange: (next: HealthFormData) => void;
   /** Shows an amber notice that this is the first (initial) observation */
   isNewTree?: boolean;
   /** Which sub-tab to open first */
@@ -39,8 +51,20 @@ type Props = {
 
 /* ─── Component ────────────────────────────────────────────────────────────── */
 
-export default function ObservationForm({ value, onChange, isNewTree, initialTab }: Props) {
+export default function ObservationForm({
+  value,
+  onChange,
+  wildlifeValue,
+  onWildlifeChange,
+  healthValue,
+  onHealthChange,
+  isNewTree,
+  initialTab,
+}: Props) {
   const [activeTab, setActiveTab] = useState<TabId>(initialTab ?? "note");
+
+  // Wildlife species — loaded lazily when the wildlife tab is first opened
+  const wildlifeSpecies = useWildlifeSpeciesOptions(activeTab === "wildlife");
 
   function setField<K extends keyof ObservationFormData>(
     key: K,
@@ -54,6 +78,25 @@ export default function ObservationForm({ value, onChange, isNewTree, initialTab
     val: string
   ) {
     onChange({ ...value, details: { ...value.details, [key]: val } });
+  }
+
+  function setWildlifeField<K extends keyof WildlifeFormData>(
+    key: K,
+    val: string
+  ) {
+    onWildlifeChange({ ...wildlifeValue, [key]: val });
+  }
+
+  function updateHealthIssue(idx: number, patch: Partial<typeof EMPTY_HEALTH_ISSUE>) {
+    const next = [...healthValue.issues];
+    next[idx] = { ...next[idx], ...patch };
+    onHealthChange({ ...healthValue, issues: next });
+  }
+
+  function removeHealthIssue(idx: number) {
+    const next = [...healthValue.issues];
+    next.splice(idx, 1);
+    onHealthChange({ ...healthValue, issues: next });
   }
 
   return (
@@ -206,12 +249,143 @@ export default function ObservationForm({ value, onChange, isNewTree, initialTab
           </>
         )}
 
-        {/* ── Stub tabs ── */}
+        {/* ── Wildlife tab ── */}
+        {activeTab === "wildlife" && (
+          <>
+            <SpeciesSelect
+              label="Wildlife species"
+              valueId={wildlifeValue.wildlifeSpeciesId || null}
+              options={wildlifeSpecies.status === "success" ? wildlifeSpecies.data : []}
+              loading={wildlifeSpecies.status === "loading"}
+              error={wildlifeSpecies.status === "error" ? wildlifeSpecies.error : null}
+              onChange={(id) => setWildlifeField("wildlifeSpeciesId", String(id))}
+            />
+
+            <Field label="Life stage">
+              <ChipSelect
+                options={["adult", "juvenile", "chick", "egg", "unknown"]}
+                value={wildlifeValue.lifeStage}
+                onChange={(v) => setWildlifeField("lifeStage", v)}
+              />
+            </Field>
+
+            <Field label="Evidence type">
+              <ChipSelect
+                options={["sighting", "tracks", "scat", "nest", "call", "other"]}
+                value={wildlifeValue.evidenceType}
+                onChange={(v) => setWildlifeField("evidenceType", v)}
+              />
+            </Field>
+
+            <Field label="Count (optional)">
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. 3"
+                placeholderTextColor={Brand.softGray}
+                keyboardType="numeric"
+                value={wildlifeValue.count}
+                onChangeText={(t) => setWildlifeField("count", t)}
+              />
+            </Field>
+
+            <Field label="Behaviour (optional)">
+              <TextInput
+                style={[styles.input, styles.multiline]}
+                placeholder="Describe what you observed..."
+                placeholderTextColor={Brand.softGray}
+                value={wildlifeValue.behaviour}
+                onChangeText={(t) => setWildlifeField("behaviour", t)}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+            </Field>
+          </>
+        )}
+
+        {/* ── Health tab ── */}
+        {activeTab === "health" && (
+          <>
+            <Field label="Health status">
+              <ChipSelect
+                options={["healthy", "stressed", "declining", "dead"]}
+                value={healthValue.healthStatus}
+                onChange={(v) => onHealthChange({ ...healthValue, healthStatus: v })}
+              />
+            </Field>
+
+            <Field label="Risk level">
+              <ChipSelect
+                options={["low", "medium", "high", "critical"]}
+                value={healthValue.riskLevel}
+                onChange={(v) => onHealthChange({ ...healthValue, riskLevel: v })}
+              />
+            </Field>
+
+            {/* Dynamic issues list */}
+            {healthValue.issues.map((issue, idx) => (
+              <View key={idx} style={styles.issueCard}>
+                <View style={styles.issueHeader}>
+                  <Text style={styles.issueTitle}>Issue {idx + 1}</Text>
+                  <Pressable onPress={() => removeHealthIssue(idx)} hitSlop={8}>
+                    <Ionicons name="close-circle-outline" size={18} color={Brand.midGray} />
+                  </Pressable>
+                </View>
+
+                <Field label="Issue type">
+                  <ChipSelect
+                    options={["fungal", "pest", "physical", "disease", "other"]}
+                    value={issue.issueType}
+                    onChange={(v) => updateHealthIssue(idx, { issueType: v })}
+                  />
+                </Field>
+
+                <Field label="Issue name (optional)">
+                  <TextInput
+                    style={styles.input}
+                    placeholder="e.g. Bracket fungus"
+                    placeholderTextColor={Brand.softGray}
+                    value={issue.issueName}
+                    onChangeText={(t) => updateHealthIssue(idx, { issueName: t })}
+                  />
+                </Field>
+
+                <Field label="Affected part">
+                  <ChipSelect
+                    options={["roots", "trunk", "bark", "branches", "canopy", "leaves"]}
+                    value={issue.affectedPart}
+                    onChange={(v) => updateHealthIssue(idx, { affectedPart: v })}
+                  />
+                </Field>
+
+                <Field label="Severity">
+                  <ChipSelect
+                    options={["minor", "moderate", "severe", "critical"]}
+                    value={issue.severity}
+                    onChange={(v) => updateHealthIssue(idx, { severity: v })}
+                  />
+                </Field>
+              </View>
+            ))}
+
+            <Pressable
+              onPress={() =>
+                onHealthChange({ ...healthValue, issues: [...healthValue.issues, EMPTY_HEALTH_ISSUE] })
+              }
+              style={styles.addIssueBtn}
+            >
+              <Ionicons name="add-circle-outline" size={16} color={Brand.primary} />
+              <Text style={styles.addIssueBtnText}>Add issue</Text>
+            </Pressable>
+          </>
+        )}
+
+        {/* ── Stub tab (photos only) ── */}
         {TABS.find((t) => t.id === activeTab)?.stub && (
           <EmptyState
             icon="construct-outline"
             title="Coming soon"
-            subtitle="This tab requires a future database migration."
+            subtitle="Photo upload will be available in a future update."
           />
         )}
       </ScrollView>
@@ -226,37 +400,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>{label}</Text>
       {children}
-    </View>
-  );
-}
-
-/* ─── ChipSelect ───────────────────────────────────────────────────────────── */
-
-function ChipSelect({
-  options,
-  value,
-  onChange,
-}: {
-  options: string[];
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <View style={styles.chips}>
-      {options.map((opt) => {
-        const selected = value === opt;
-        return (
-          <Pressable
-            key={opt}
-            onPress={() => onChange(selected ? "" : opt)}
-            style={[styles.chip, selected && styles.chipSelected]}
-          >
-            <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-              {opt.replace(/_/g, " ")}
-            </Text>
-          </Pressable>
-        );
-      })}
     </View>
   );
 }
@@ -299,16 +442,40 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
 
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: {
-    borderRadius: 20,
+  issueCard: {
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#ddd",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "#fafafa",
+    borderColor: Brand.pale,
+    padding: 12,
+    gap: 12,
+    backgroundColor: Brand.offWhite,
   },
-  chipSelected: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  chipText:         { fontSize: 12, color: Brand.midGray },
-  chipTextSelected: { color: Brand.white, fontWeight: "700" },
+  issueHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  issueTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Brand.midGray,
+  },
+
+  addIssueBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Brand.pale,
+    backgroundColor: Brand.offWhite,
+    alignSelf: "flex-start",
+  },
+  addIssueBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Brand.primary,
+  },
 });
