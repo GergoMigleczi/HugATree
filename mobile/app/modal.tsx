@@ -14,13 +14,21 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { Brand } from "@/constants/theme";
 import { getTreeObservationsApi } from "@/src/features/observations/observations.api";
+import { getTreeWildlifeApi, createWildlifeApi } from "@/src/features/observations/observations.wildlife.api";
+import { getTreeHealthApi, createHealthApi } from "@/src/features/observations/observations.health.api";
 import { createObservation } from "@/src/features/observations/usecases/createObservation";
 import ObservationCard from "@/src/features/observations/components/ObservationCard";
 import ObservationForm from "@/src/features/observations/components/ObservationForm";
 import {
   EMPTY_OBSERVATION_FORM,
+  EMPTY_WILDLIFE_FORM,
+  EMPTY_HEALTH_FORM,
   type ObservationFormData,
   type ObservationItem,
+  type WildlifeFormData,
+  type WildlifeItem,
+  type HealthFormData,
+  type HealthItem,
 } from "@/src/features/observations/observations.types";
 import { useLoading } from "@/src/ui/loading/LoadingProvider";
 import { getTreeDetailsApi } from "@/src/features/trees/trees.api";
@@ -36,9 +44,37 @@ const TABS: TabDef<TabId>[] = [
   { id: "overview",  label: "Overview",  icon: "list-outline"     },
   { id: "details",   label: "Details",   icon: "resize-outline"   },
   { id: "history",   label: "History",   icon: "calendar-outline" },
-  { id: "wildlife",  label: "Wildlife",  icon: "leaf-outline",  stub: true },
-  { id: "health",    label: "Health",    icon: "heart-outline", stub: true },
+  { id: "wildlife",  label: "Wildlife",  icon: "leaf-outline"     },
+  { id: "health",    label: "Health",    icon: "heart-outline"    },
 ];
+
+/* ─── Helpers ──────────────────────────────────────────────────────────────── */
+
+/** Converts a WildlifeItem to the ObservationItem shape ObservationCard expects */
+function wildlifeToCard(w: WildlifeItem): ObservationItem {
+  return {
+    id:         w.observationId,
+    title:      w.title ?? `${w.wildlifeSpeciesName} — ${w.lifeStage}`,
+    noteText:   w.noteText,
+    observedAt: w.observedAt,
+    createdAt:  w.createdAt,
+    authorName: w.authorName,
+    photoKey:   w.photoKey,
+  };
+}
+
+/** Converts a HealthItem to the ObservationItem shape ObservationCard expects */
+function healthToCard(h: HealthItem): ObservationItem {
+  return {
+    id:         h.observationId,
+    title:      h.title ?? `${h.healthStatus} — ${h.riskLevel} risk`,
+    noteText:   h.noteText,
+    observedAt: h.observedAt,
+    createdAt:  h.createdAt,
+    authorName: h.authorName,
+    photoKey:   h.photoKey,
+  };
+}
 
 /* ─── Screen ───────────────────────────────────────────────────────────────── */
 
@@ -49,15 +85,34 @@ export default function TreeModalScreen() {
 
   const numericTreeId = treeId ? parseInt(treeId, 10) : null;
 
-  const [tab,          setTab]         = useState<TabId>("overview");
-  const [mode,         setMode]        = useState<"view" | "add">("view");
+  /* ── Tab + mode ─────────────────────────────────────────────────────────── */
+  const [tab,  setTab]  = useState<TabId>("overview");
+  const [mode, setMode] = useState<"view" | "add">("view");
+
+  /* ── Observations ───────────────────────────────────────────────────────── */
   const [observations, setObservations] = useState<ObservationItem[] | null>(null);
-  const [loadError,    setLoadError]   = useState<string | null>(null);
-  const [formData,     setFormData]    = useState<ObservationFormData>(EMPTY_OBSERVATION_FORM);
-  const [details,      setDetails]     = useState<TreeDetail | null | "loading" | "error">(null);
+  const [loadError,    setLoadError]    = useState<string | null>(null);
+
+  /* ── Details ────────────────────────────────────────────────────────────── */
+  const [details,      setDetails]      = useState<TreeDetail | null | "loading" | "error">(null);
   const detailsFetched = useRef(false);
 
-  /* ── Load observations ─────────────────────────────────────────────────── */
+  /* ── Wildlife ───────────────────────────────────────────────────────────── */
+  const [wildlife,      setWildlife]      = useState<WildlifeItem[] | null>(null);
+  const [wildlifeError, setWildlifeError] = useState<string | null>(null);
+  const wildlifeFetched = useRef(false);
+
+  /* ── Health ─────────────────────────────────────────────────────────────── */
+  const [health,      setHealth]      = useState<HealthItem[] | null>(null);
+  const [healthError, setHealthError] = useState<string | null>(null);
+  const healthFetched = useRef(false);
+
+  /* ── Form data ──────────────────────────────────────────────────────────── */
+  const [formData,     setFormData]     = useState<ObservationFormData>(EMPTY_OBSERVATION_FORM);
+  const [wildlifeForm, setWildlifeForm] = useState<WildlifeFormData>(EMPTY_WILDLIFE_FORM);
+  const [healthForm,   setHealthForm]   = useState<HealthFormData>(EMPTY_HEALTH_FORM);
+
+  /* ── Load observations on mount ─────────────────────────────────────────── */
   useEffect(() => {
     if (!numericTreeId) return;
     let cancelled = false;
@@ -74,35 +129,7 @@ export default function TreeModalScreen() {
     return () => { cancelled = true; };
   }, [numericTreeId]);
 
-  /* ── Save new observation ──────────────────────────────────────────────── */
-  async function handleSave() {
-    if (!numericTreeId) return;
-    try {
-      await withLoading(
-        () => createObservation(numericTreeId, formData),
-        { message: "Saving...", blocking: true, background: "transparent" }
-      );
-      const items = await getTreeObservationsApi(numericTreeId);
-      setObservations(items);
-      if (tab === "details") {
-        detailsFetched.current = false;
-        getTreeDetailsApi(numericTreeId)
-          .then((d) => setDetails(d))
-          .catch(() => setDetails("error"));
-      }
-      setFormData(EMPTY_OBSERVATION_FORM);
-      setMode("view");
-    } catch (e: any) {
-      Alert.alert("Failed to save", e?.message ?? "Please try again.");
-    }
-  }
-
-  function cancelAdd() {
-    setFormData(EMPTY_OBSERVATION_FORM);
-    setMode("view");
-  }
-
-  /* ── Load details (lazy, once) ─────────────────────────────────────────── */
+  /* ── Load details (lazy, once) ──────────────────────────────────────────── */
   useEffect(() => {
     if (tab !== "details" || !numericTreeId || detailsFetched.current) return;
     detailsFetched.current = true;
@@ -112,9 +139,135 @@ export default function TreeModalScreen() {
       .catch(() => setDetails("error"));
   }, [tab, numericTreeId]);
 
-  const isStubTab = TABS.find((t) => t.id === tab)?.stub === true;
+  /* ── Load wildlife (lazy, once) ─────────────────────────────────────────── */
+  useEffect(() => {
+    if (tab !== "wildlife" || !numericTreeId || wildlifeFetched.current) return;
+    wildlifeFetched.current = true;
+    getTreeWildlifeApi(numericTreeId)
+      .then((items) => setWildlife(items))
+      .catch((e) => setWildlifeError(e?.message ?? "Could not load wildlife records"));
+  }, [tab, numericTreeId]);
 
-  /* ── Render ────────────────────────────────────────────────────────────── */
+  /* ── Load health (lazy, once) ───────────────────────────────────────────── */
+  useEffect(() => {
+    if (tab !== "health" || !numericTreeId || healthFetched.current) return;
+    healthFetched.current = true;
+    getTreeHealthApi(numericTreeId)
+      .then((items) => setHealth(items))
+      .catch((e) => setHealthError(e?.message ?? "Could not load health records"));
+  }, [tab, numericTreeId]);
+
+  /* ── Save ───────────────────────────────────────────────────────────────── */
+  async function handleSave() {
+    if (!numericTreeId) return;
+    try {
+      if (tab === "wildlife") {
+        await withLoading(
+          () => createWildlifeApi(numericTreeId, formData, wildlifeForm),
+          { message: "Saving...", blocking: true, background: "transparent" }
+        );
+        // Refresh both wildlife list and observations (observation is created too)
+        const [newWildlife, newObs] = await Promise.all([
+          getTreeWildlifeApi(numericTreeId),
+          getTreeObservationsApi(numericTreeId),
+        ]);
+        setWildlife(newWildlife);
+        setObservations(newObs);
+
+      } else if (tab === "health") {
+        await withLoading(
+          () => createHealthApi(numericTreeId, formData, healthForm),
+          { message: "Saving...", blocking: true, background: "transparent" }
+        );
+        const [newHealth, newObs] = await Promise.all([
+          getTreeHealthApi(numericTreeId),
+          getTreeObservationsApi(numericTreeId),
+        ]);
+        setHealth(newHealth);
+        setObservations(newObs);
+
+      } else {
+        await withLoading(
+          () => createObservation(numericTreeId, formData),
+          { message: "Saving...", blocking: true, background: "transparent" }
+        );
+        const items = await getTreeObservationsApi(numericTreeId);
+        setObservations(items);
+        // Refresh details if the form had measurements
+        if (tab === "details") {
+          detailsFetched.current = false;
+          getTreeDetailsApi(numericTreeId)
+            .then((d) => setDetails(d))
+            .catch(() => setDetails("error"));
+        }
+      }
+
+      setFormData(EMPTY_OBSERVATION_FORM);
+      setWildlifeForm(EMPTY_WILDLIFE_FORM);
+      setHealthForm(EMPTY_HEALTH_FORM);
+      setMode("view");
+    } catch (e: any) {
+      Alert.alert("Failed to save", e?.message ?? "Please try again.");
+    }
+  }
+
+  function cancelAdd() {
+    setFormData(EMPTY_OBSERVATION_FORM);
+    setWildlifeForm(EMPTY_WILDLIFE_FORM);
+    setHealthForm(EMPTY_HEALTH_FORM);
+    setMode("view");
+  }
+
+  /* ── Header button label ────────────────────────────────────────────────── */
+  function renderHeaderAction() {
+    if (mode === "add") {
+      return (
+        <Pressable onPress={cancelAdd} style={styles.cancelBtn} hitSlop={8}>
+          <Text style={styles.cancelBtnText}>Cancel</Text>
+        </Pressable>
+      );
+    }
+    if (tab === "details") {
+      return (
+        <Pressable onPress={() => setMode("add")} style={styles.addBtn} hitSlop={8}>
+          <Ionicons name="pencil-outline" size={14} color={Brand.white} />
+          <Text style={styles.addBtnText}>Update</Text>
+        </Pressable>
+      );
+    }
+    if (tab === "wildlife") {
+      return (
+        <Pressable onPress={() => setMode("add")} style={styles.addBtn} hitSlop={8}>
+          <Ionicons name="add" size={16} color={Brand.white} />
+          <Text style={styles.addBtnText}>Add wildlife</Text>
+        </Pressable>
+      );
+    }
+    if (tab === "health") {
+      return (
+        <Pressable onPress={() => setMode("add")} style={styles.addBtn} hitSlop={8}>
+          <Ionicons name="add" size={16} color={Brand.white} />
+          <Text style={styles.addBtnText}>Add health</Text>
+        </Pressable>
+      );
+    }
+    return (
+      <Pressable onPress={() => setMode("add")} style={styles.addBtn} hitSlop={8}>
+        <Ionicons name="add" size={16} color={Brand.white} />
+        <Text style={styles.addBtnText}>Add note</Text>
+      </Pressable>
+    );
+  }
+
+  /* ── Which tab to open ObservationForm on ───────────────────────────────── */
+  function formInitialTab(): "note" | "details" | "wildlife" | "health" {
+    if (tab === "details")  return "details";
+    if (tab === "wildlife") return "wildlife";
+    if (tab === "health")   return "health";
+    return "note";
+  }
+
+  /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
     <View style={styles.container}>
 
@@ -134,21 +287,7 @@ export default function TreeModalScreen() {
             </Text>
           </View>
 
-          {mode === "view" && !isStubTab && tab === "details" ? (
-            <Pressable onPress={() => setMode("add")} style={styles.addBtn} hitSlop={8}>
-              <Ionicons name="pencil-outline" size={14} color={Brand.white} />
-              <Text style={styles.addBtnText}>Update</Text>
-            </Pressable>
-          ) : mode === "view" && !isStubTab ? (
-            <Pressable onPress={() => setMode("add")} style={styles.addBtn} hitSlop={8}>
-              <Ionicons name="add" size={16} color={Brand.white} />
-              <Text style={styles.addBtnText}>Add note</Text>
-            </Pressable>
-          ) : mode === "add" ? (
-            <Pressable onPress={cancelAdd} style={styles.cancelBtn} hitSlop={8}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
-            </Pressable>
-          ) : null}
+          {renderHeaderAction()}
         </View>
       </SafeAreaView>
 
@@ -157,22 +296,11 @@ export default function TreeModalScreen() {
         <TabBar tabs={TABS} activeTab={tab} onChange={setTab} />
       )}
 
-      {/* View mode */}
+      {/* ── View mode ────────────────────────────────────────────────────── */}
       {mode === "view" && (
         <>
-          {/* Stub tabs */}
-          {isStubTab && (
-            <View style={styles.stubWrap}>
-              <EmptyState
-                icon="construct-outline"
-                title="Coming soon"
-                subtitle="This tab requires a future database migration."
-              />
-            </View>
-          )}
-
           {/* Details tab */}
-          {!isStubTab && tab === "details" && (
+          {tab === "details" && (
             <ScrollView contentContainerStyle={styles.listContent}>
               {details === "loading" && (
                 <ActivityIndicator style={styles.spinner} color={Brand.primary} />
@@ -180,12 +308,12 @@ export default function TreeModalScreen() {
               {details === "error" && (
                 <Text style={styles.errorText}>Could not load details.</Text>
               )}
-              {(details === null || details === "loading" || details === "error") ? null : (
+              {details !== null && details !== "loading" && details !== "error" && (
                 <View style={styles.detailsCard}>
-                  <DetailRow label="Height" value={details.heightM != null ? `${details.heightM} m` : null} sub={details.heightMethod} />
-                  <DetailRow label="Trunk diameter" value={details.trunkDiameterCm != null ? `${details.trunkDiameterCm} cm` : null} sub={[details.diameterHeightCm != null ? `@ ${details.diameterHeightCm} cm` : null, details.diameterMethod].filter(Boolean).join(" · ")} />
-                  <DetailRow label="Canopy diameter" value={details.canopyDiameterM != null ? `${details.canopyDiameterM} m` : null} sub={details.canopyDensity} />
-                  <DetailRow label="Est. age" value={details.probableAgeYears != null ? `${details.probableAgeYears} yrs` : null} sub={details.ageBasis} />
+                  <DetailRow label="Height"          value={details.heightM != null ? `${details.heightM} m` : null}          sub={details.heightMethod} />
+                  <DetailRow label="Trunk diameter"  value={details.trunkDiameterCm != null ? `${details.trunkDiameterCm} cm` : null} sub={[details.diameterHeightCm != null ? `@ ${details.diameterHeightCm} cm` : null, details.diameterMethod].filter(Boolean).join(" · ")} />
+                  <DetailRow label="Canopy diameter" value={details.canopyDiameterM != null ? `${details.canopyDiameterM} m` : null}  sub={details.canopyDensity} />
+                  <DetailRow label="Est. age"        value={details.probableAgeYears != null ? `${details.probableAgeYears} yrs` : null} sub={details.ageBasis} />
                   {(details.recordedByName || details.recordedAt) && (
                     <View style={styles.detailsFooter}>
                       {details.recordedByName && (
@@ -217,16 +345,14 @@ export default function TreeModalScreen() {
           )}
 
           {/* Overview + History tabs — observation list */}
-          {!isStubTab && tab !== "details" && (
+          {(tab === "overview" || tab === "history") && (
             <ScrollView contentContainerStyle={styles.listContent}>
               {loadError && (
                 <Text style={styles.errorText}>{loadError}</Text>
               )}
-
               {!loadError && observations === null && (
                 <ActivityIndicator style={styles.spinner} color={Brand.primary} />
               )}
-
               {!loadError && observations !== null && observations.length === 0 && (
                 <EmptyState
                   icon="leaf-outline"
@@ -234,19 +360,74 @@ export default function TreeModalScreen() {
                   subtitle={'Tap "Add note" to be the first.'}
                 />
               )}
-
               {(observations ?? []).map((obs, idx) => (
-                <ObservationCard key={obs.id} item={obs} isInitial={tab === "overview" && idx === 0} />
+                <ObservationCard
+                  key={obs.id}
+                  item={obs}
+                  isInitial={tab === "overview" && idx === 0}
+                />
+              ))}
+            </ScrollView>
+          )}
+
+          {/* Wildlife tab */}
+          {tab === "wildlife" && (
+            <ScrollView contentContainerStyle={styles.listContent}>
+              {wildlifeError && (
+                <Text style={styles.errorText}>{wildlifeError}</Text>
+              )}
+              {!wildlifeError && wildlife === null && (
+                <ActivityIndicator style={styles.spinner} color={Brand.primary} />
+              )}
+              {!wildlifeError && wildlife !== null && wildlife.length === 0 && (
+                <EmptyState
+                  icon="leaf-outline"
+                  title="No wildlife records yet."
+                  subtitle={'Tap "Add wildlife" to be the first.'}
+                />
+              )}
+              {(wildlife ?? []).map((w) => (
+                <ObservationCard key={w.id} item={wildlifeToCard(w)} isInitial={false} />
+              ))}
+            </ScrollView>
+          )}
+
+          {/* Health tab */}
+          {tab === "health" && (
+            <ScrollView contentContainerStyle={styles.listContent}>
+              {healthError && (
+                <Text style={styles.errorText}>{healthError}</Text>
+              )}
+              {!healthError && health === null && (
+                <ActivityIndicator style={styles.spinner} color={Brand.primary} />
+              )}
+              {!healthError && health !== null && health.length === 0 && (
+                <EmptyState
+                  icon="heart-outline"
+                  title="No health records yet."
+                  subtitle={'Tap "Add health" to be the first.'}
+                />
+              )}
+              {(health ?? []).map((h) => (
+                <ObservationCard key={h.id} item={healthToCard(h)} isInitial={false} />
               ))}
             </ScrollView>
           )}
         </>
       )}
 
-      {/* Add mode — reusable ObservationForm */}
+      {/* ── Add mode ─────────────────────────────────────────────────────── */}
       {mode === "add" && (
         <>
-          <ObservationForm value={formData} onChange={setFormData} initialTab={tab === "details" ? "details" : "note"} />
+          <ObservationForm
+            value={formData}
+            onChange={setFormData}
+            wildlifeValue={wildlifeForm}
+            onWildlifeChange={setWildlifeForm}
+            healthValue={healthForm}
+            onHealthChange={setHealthForm}
+            initialTab={formInitialTab()}
+          />
 
           <View style={styles.formFooter}>
             <Pressable onPress={cancelAdd} style={styles.secondaryBtn}>
@@ -313,8 +494,6 @@ const styles = StyleSheet.create({
   addBtnText:    { fontSize: 12, fontWeight: "700", color: Brand.white },
   cancelBtn:     { paddingHorizontal: 12, paddingVertical: 8 },
   cancelBtnText: { fontSize: 13, fontWeight: "600", color: Brand.midGray },
-
-  stubWrap: { flex: 1 },
 
   listContent: { padding: 16, gap: 10, paddingBottom: 32 },
   spinner:     { marginTop: 40 },
