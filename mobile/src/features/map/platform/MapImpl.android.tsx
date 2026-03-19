@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import MapView, { Marker, Region } from "react-native-maps";
 import { GOOGLE_MAP_STYLE } from "../googleMapStyle";
-import type { Bbox, MapRegion } from "../map.types";
+import type { Bbox, MapRegion, MapLayer } from "../map.types";
 import type { TreePin } from "../../trees/trees.types";
 import type { LatLng } from "../../location/hooks/useLiveLocation";
 import { regionToBbox } from "../map.functions";
@@ -44,6 +44,7 @@ type Props = {
   onMapPress?: (coord: LatLng) => void;
   draftMarker?: LatLng | null;
   onViewportChange?: (args: { region: MapRegion; bbox: Bbox }) => void;
+  mapLayer: MapLayer;
 };
 
 export default function MapImpl({
@@ -57,6 +58,7 @@ export default function MapImpl({
   onMapPress,
   draftMarker,
   onViewportChange,
+  mapLayer,
 }: Props) {
   const mapRef = useRef<MapView | null>(null);
   const [region, setRegion] = useState<Region>(FALLBACK_REGION);
@@ -163,6 +165,7 @@ export default function MapImpl({
       customMapStyle={GOOGLE_MAP_STYLE}
       initialRegion={FALLBACK_REGION}
       mapPadding={{ top: 24, right: 24, bottom: 24, left: 24 }}
+      mapType={mapLayer}
       // drag disables follow
       showsUserLocation={true}
       showsMyLocationButton={false}

@@ -8,7 +8,7 @@ import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated"
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
 import MapImpl from "../../src/features/map/platform/MapImpl";
-import type {Bbox, MapRegion} from "../../src/features/map/map.types";
+import type {Bbox, MapRegion, MapLayer} from "../../src/features/map/map.types";
 import { usePinPress } from "../../src/features/map/usePinPress";
 import { useLiveLocation } from "../../src/features/location/hooks/useLiveLocation";
 import BackToCurrentLocationButton from "../../src/features/map/components/BackToCurrentLocationButton";
@@ -30,7 +30,6 @@ export default function MapRoute() {
   const router = useRouter();
 
   const [error, setError] = useState<string | null>(null);
-  const [pinsVersion, setPinsVersion] = useState(0);
   const [recenterToken, setRecenterToken] = useState(0);
   const [submitting, setSubmitting]   = useState(false);
   const [viewport, setViewport] = useState<{ region: MapRegion; bbox: Bbox } | null>(null);
@@ -42,6 +41,8 @@ export default function MapRoute() {
     enabled: true,
     limit: 5000,
   });
+
+  const [mapLayer, setMapLayer] = useState<MapLayer>("standard");
 
   const pins = pinsState.pins;
 
@@ -110,7 +111,6 @@ export default function MapRoute() {
       );
       Alert.alert("Tree added", "Your tree has been added successfully.");
       closeSheet();
-      setPinsVersion((v) => v + 1);
     } catch (e: any) {
       Alert.alert("Failed to save tree", e.message ?? "Please try again.");
     } finally {
@@ -177,6 +177,7 @@ export default function MapRoute() {
           pickLocationEnabled={canPickLocation}
           onMapPress={onMapPickLocation}
           draftMarker={draftLocation}
+          mapLayer={mapLayer}
           onViewportChange={(v) => {
             setViewport(v);
             setShowSearchHere(true);
@@ -220,6 +221,26 @@ export default function MapRoute() {
           {userLocation ? (
             <BackToCurrentLocationButton onPress={() => setRecenterToken((n) => n + 1)} />
           ) : null}
+
+          <Pressable
+            onPress={() =>
+              setMapLayer((prev) => (prev === "standard" ? "hybrid" : "standard"))
+            }
+            style={({ pressed }) => [
+              styles.layerToggleBtn,
+              { opacity: pressed ? 0.75 : 1 },
+            ]}
+            hitSlop={8}
+          >
+            <Ionicons
+              name={mapLayer === "standard" ? "earth-outline" : "map-outline"}
+              size={18}
+              color={Brand.charcoal}
+            />
+            <Text style={styles.layerToggleText}>
+              {mapLayer === "standard" ? "Street" : "Satellite"}
+            </Text>
+          </Pressable>
 
           <Pressable
             onPress={openAddTree}
@@ -455,4 +476,22 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   secondaryBtnText: { color: Brand.charcoal, fontWeight: "800" },
+  layerToggleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Brand.white,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 999,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  layerToggleText: {
+    fontWeight: "700",
+    fontSize: 14,
+    color: Brand.charcoal,
+  },
 });
