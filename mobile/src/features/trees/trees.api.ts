@@ -1,5 +1,5 @@
 import { authFetch } from "@/src/api/authFetch";
-import type { SpeciesOption, CreateTreeInput, CreateTreeResponseApi, TreePin, GetTreesInBboxParams, TreesInBboxResponseApi, SpeciesListResponseApi} from "./trees.types";
+import type { SpeciesOption, CreateTreeInput, CreateTreeResponseApi, TreePin, GetTreesInBboxParams, TreesInBboxResponseApi, SpeciesListResponseApi, TreeDetail } from "./trees.types";
 
 export async function getSpeciesOptions(): Promise<SpeciesOption[]> {
   const res = await authFetch<SpeciesListResponseApi>("/trees/species", { method: "GET" });
@@ -15,8 +15,11 @@ export async function createTreeApi(input: CreateTreeInput): Promise<CreateTreeR
   return authFetch<CreateTreeResponseApi>("/trees", {
     method: "POST",
     body: {
-        tree: input.tree,
-        observation: input.observation,
+      tree: input.tree,
+      observation: {
+        ...input.observation,
+        ...(input.details ? { details: input.details } : {}),
+      },
     },
   });
 }
@@ -47,6 +50,13 @@ export async function getTreesInBboxApi(params: GetTreesInBboxParams): Promise<{
     count: res.items.length,
     total: res.count,
     limit,
-    hasMore: res.count > res.items.length ? true : false,
+    hasMore: res.count > res.items.length,
   };
+}
+
+export async function getTreeDetailsApi(treeId: number): Promise<TreeDetail | null> {
+  const res = await authFetch<TreeDetail | Record<string, never>>(`/trees/${treeId}/details`, { method: "GET" });
+  // API returns {} when no details exist
+  if (!res || !("id" in res)) return null;
+  return res as TreeDetail;
 }
