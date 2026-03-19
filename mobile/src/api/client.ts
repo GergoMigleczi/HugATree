@@ -46,6 +46,6 @@ export async function apiRequest<T>(path: string, opts: ApiRequestOptions = {}):
     throw err;
   }
 
-  console.log(`API Response: ${method} ${API_URL}${path}`, data);
+  console.log(`API Response: ${method} ${API_URL}${path}`, data, res);
   return data as T;
 }

@@ -9,7 +9,7 @@ import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 
 import MapImpl from "../../src/features/map/platform/MapImpl";
 import { getPins } from "../../src/features/map/map.api";
-import type { Pin } from "../../src/features/map/map.types";
+import type { Pin, Bbox, MapRegion} from "../../src/features/map/map.types";
 import { usePinPress } from "../../src/features/map/usePinPress";
 import { useLiveLocation } from "../../src/features/location/hooks/useLiveLocation";
 import BackToCurrentLocationButton from "../../src/features/map/components/BackToCurrentLocationButton";
@@ -19,19 +19,37 @@ import SpeciesSelect from "@/src/features/trees/components/SpeciesSelect";
 import { useSpeciesOptions } from "@/src/features/trees/hooks/useSpeciesOptions";
 import { useLoading } from "@/src/ui/loading/LoadingProvider";
 import { createTree } from "@/src/features/trees/usecases/createTree";
+import { usePinsInBbox } from "@/src/features/trees/hooks/usePinsInBox";
+import ObservationForm from "@/src/features/observations/components/ObservationForm";
+import {
+  EMPTY_OBSERVATION_FORM,
+  buildDetailsPayload,
+  type ObservationFormData,
+} from "@/src/features/observations/observations.types";
 
 export default function MapRoute() {
   const router = useRouter();
 
-  const [pins, setPins] = useState<Pin[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recenterToken, setRecenterToken] = useState(0);
-    const [submitting, setSubmitting]   = useState(false);
+  const [submitting, setSubmitting]   = useState(false);
+  const [viewport, setViewport] = useState<{ region: MapRegion; bbox: Bbox } | null>(null);
+  const [searchViewport, setSearchViewport] = useState<typeof viewport | null>(null);
+  const didAutoSearch = useRef(false);
+  const [showSearchHere, setShowSearchHere] = useState(false);
+  const pinsState = usePinsInBbox({
+    viewport: searchViewport,
+    enabled: true,
+    limit: 5000,
+  });
+
+  const pins = pinsState.pins;
 
   const onPinPress = usePinPress();
 
   const loc = useLiveLocation();
   const userLocation = loc.status === "success" ? loc.location : null;
+
 
   // Bottom sheet state
   const sheetRef = useRef<BottomSheet>(null);
@@ -98,19 +116,37 @@ export default function MapRoute() {
   }
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await getPins();
-        if (!cancelled) setPins(data);
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "Failed to load pins");
-      }
-    })();
-    return () => {
-      cancelled = true;
+    if (didAutoSearch.current) return;
+    if (!viewport) return;
+
+    // Case 1: No user location → search fallback region once
+    if (!userLocation) {
+      didAutoSearch.current = true;
+      setSearchViewport(viewport);
+      setShowSearchHere(false);
+      return;
+    }
+
+    // Case 2: User location exists → wait until map is centered on user
+    const mapCenter = {
+      latitude: viewport.region.latitude,
+      longitude: viewport.region.longitude,
     };
-  }, []);
+
+    const dLat = (userLocation.latitude - mapCenter.latitude) * 111_000;
+    const dLng =
+      (userLocation.longitude - mapCenter.longitude) *
+      111_000 *
+      Math.cos((userLocation.latitude * Math.PI) / 180);
+
+    const distanceMeters = Math.sqrt(dLat * dLat + dLng * dLng);
+
+    if (distanceMeters > 250) return;
+
+    didAutoSearch.current = true;
+    setSearchViewport(viewport);
+    setShowSearchHere(false);
+  }, [viewport, userLocation]);
 
   // Animate the map container height based on the sheet stage.
   // Skeleton/simple version: closed => 100%, open at 35% => 65%, full => 0% (map hidden)
@@ -138,6 +174,10 @@ export default function MapRoute() {
           pickLocationEnabled={canPickLocation}
           onMapPress={onMapPickLocation}
           draftMarker={draftLocation}
+          onViewportChange={(v) => {
+            setViewport(v);
+            setShowSearchHere(true);
+          }}
         />
 
         {!pins ? (
@@ -157,6 +197,20 @@ export default function MapRoute() {
             <Text style={styles.backText}>Home</Text>
           </Pressable>
         </SafeAreaView>
+        
+        {showSearchHere && viewport ? (
+          <View style={styles.searchWrap} pointerEvents="box-none">
+            <Pressable
+              onPress={() => {
+                setSearchViewport(viewport);
+                setShowSearchHere(false);
+              }}
+              style={styles.searchBtn}
+            >
+              <Text style={styles.searchText}>Search in this area</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         {/* Buttons (bottom-right stack) */}
         <View style={styles.rightControls} pointerEvents="box-none">
@@ -263,6 +317,26 @@ export default function MapRoute() {
 }
 
 const styles = StyleSheet.create({
+  searchWrap: {
+    position: "absolute",
+    top: 60,
+    alignSelf: "center",
+  },
+  searchBtn: {
+    backgroundColor: Brand.white,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  searchText: {
+    fontWeight: "800",
+    color: Brand.charcoal,
+  },
+
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",

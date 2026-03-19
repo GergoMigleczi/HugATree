@@ -122,7 +122,6 @@ export default function HomeScreen() {
       id:      "map-preview",
       cols:    2,
       rows:    2,
-      pins,
       onPress: () => router.push("/map"),
     },
     {
