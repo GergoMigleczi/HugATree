@@ -55,7 +55,6 @@ final class CreateTree
                 'created_by_user_id' => $userId,
                 'title' => $obs['title'] ?? null,
                 'note_text' => $obs['noteText'] ?? null,
-                'observed_at' => $obs['observedAt'] ?? null,
             ]);
 
             // Optional details -> tree_detail_history
