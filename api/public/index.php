@@ -28,9 +28,6 @@ use App\Application\UseCase\RegisterUser;
 use App\Application\UseCase\CreateTree;
 use App\Application\UseCase\GetTreesInBbox;
 use App\Application\UseCase\GetSpecies;
-use App\Application\UseCase\GetTreeObservations;
-use App\Application\UseCase\AddObservation;
-use App\Application\UseCase\GetTreeDetails;
 
 use Dotenv\Dotenv;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -46,8 +43,8 @@ $app = AppFactory::create();
 $app->addBodyParsingMiddleware();
 
 // DEV error settings (do NOT enable in prod)
-ini_set('display_errors', '0');
-ini_set('display_startup_errors', '0');
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
 $displayErrorDetails = true; // set false in prod
@@ -80,9 +77,6 @@ $logoutSession = new LogoutSession($sessionRepo);
 $getMe = new GetMe($userRepo);
 $getTreesInBbox = new GetTreesInBbox($treeRepo);
 $getSpecies = new GetSpecies($speciesRepo);
-$getTreeObservations = new GetTreeObservations($observationRepo);
-$addObservation = new AddObservation($tx, $observationRepo, $treeDetailRepo);
-$getTreeDetails = new GetTreeDetails($treeDetailRepo);
 
 // --- trees use case ---
 $createTree = new CreateTree(
@@ -106,8 +100,8 @@ MeRoutes::register($app, $getMe);
 TreesRoutes::registerPublic($app, $getTreesInBbox, $getSpecies);
 
 // Protected trees endpoints (JWT required)
-$app->group('', function ($group) use ($createTree, $getTreeObservations, $addObservation, $getTreeDetails) {
-  TreesRoutes::registerProtected($group, $createTree, $getTreeObservations, $addObservation, $getTreeDetails);
+$app->group('', function ($group) use ($createTree) {
+  TreesRoutes::registerProtected($group, $createTree);
 })->add(new AuthMiddleware());
 
 $app->run();
