@@ -8,8 +8,7 @@ import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated"
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
 import MapImpl from "../../src/features/map/platform/MapImpl";
-import { getPins } from "../../src/features/map/map.api";
-import type { Pin, Bbox, MapRegion} from "../../src/features/map/map.types";
+import type {Bbox, MapRegion} from "../../src/features/map/map.types";
 import { usePinPress } from "../../src/features/map/usePinPress";
 import { useLiveLocation } from "../../src/features/location/hooks/useLiveLocation";
 import BackToCurrentLocationButton from "../../src/features/map/components/BackToCurrentLocationButton";

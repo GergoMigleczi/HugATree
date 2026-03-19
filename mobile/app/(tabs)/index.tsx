@@ -30,8 +30,6 @@ import * as Location from "expo-location";
 import { useAuth } from "@/src/features/auth/AuthProvider";
 import { Brand } from "@/constants/theme";
 import { HomeGrid, type GridItem } from "../../src/features/home/components/HomeGrid";
-import { getPins } from "../../src/features/map/map.api";
-import type { Pin } from "../../src/features/map/map.types";
 import { useLiveLocation } from "@/src/features/location/hooks/useLiveLocation";
 
 // HugATree logo — place PNG at mobile/assets/images/logo.png
@@ -64,21 +62,6 @@ export default function HomeScreen() {
   const textCol  = isDark ? Brand.offWhite : Brand.charcoal;
   const subCol   = isDark ? Brand.softGray : Brand.midGray;
   const borderCl = isDark ? Brand.deep     : Brand.pale;
-
-  const [pins, setPins] = useState<Pin[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await getPins();
-        if (!cancelled) setPins(data);
-      } catch {
-        if (!cancelled) setPins([]);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
 
   // ── Location label ──
   // Tracks the user's live GPS position via the shared useLiveLocation hook.
