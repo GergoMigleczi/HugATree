@@ -1,5 +1,74 @@
 # Project Libraries and Dependencies
 
+## Prerequisites
+
+Before installing project dependencies, ensure you have the following tools installed.
+
+### Git
+
+Git is required to clone the repository. To check if you have it, run `git --version` in your terminal.
+
+**Installing Git**
+
+- **macOS**: Run `xcode-select --install` in Terminal, or download from [git-scm.com](https://git-scm.com/download/mac). Git also comes bundled with Xcode.
+- **Windows**: Download the installer from [git-scm.com](https://git-scm.com/download/win). During setup, choose "Git from the command line and also from 3rd-party software" when prompted.
+- **Linux**: Run `sudo apt install git` (Debian/Ubuntu) or `sudo dnf install git` (Fedora/RHEL).
+
+**Connecting Git to VS Code**
+
+VS Code has built-in Git support, but it needs Git installed on your system first.
+
+1. Install Git using the steps above, then restart VS Code.
+2. Open the Source Control panel with `Ctrl+Shift+G` (Windows/Linux) or `Cmd+Shift+G` (macOS) — you should see your repository's changes listed there.
+3. If VS Code can't find Git, open Settings (`Ctrl+,` / `Cmd+,`), search for `git.path`, and set it to your Git executable path (e.g. `C:\Program Files\Git\bin\git.exe` on Windows).
+4. The recommended **GitLens** extension (search in the Extensions panel, `Ctrl+Shift+X`) adds helpful features like inline blame, history views, and branch management.
+
+---
+
+### Node.js and npm
+
+npm is bundled with Node.js, so installing Node gives you both. To check if you already have them, run `node --version` and `npm --version`.
+
+**Installing Node.js / npm**
+
+The recommended approach is to use a version manager so you can switch Node versions per project.
+
+- **nvm (macOS/Linux)**: Install via `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash`, then restart your terminal and run `nvm install --lts` to install the latest LTS version.
+- **nvm-windows (Windows)**: Download the installer from the [nvm-windows releases page](https://github.com/coreybutler/nvm-windows/releases), then run `nvm install lts` and `nvm use lts`.
+- **Direct install**: If you prefer not to use a version manager, download the LTS installer directly from [nodejs.org](https://nodejs.org).
+
+Once installed, verify everything is working with:
+
+```bash
+node --version   # should print v20.x.x or higher
+npm --version    # should print 10.x.x or higher
+```
+
+This project's frontend requires Node 18 or higher. If you're on an older version, run `nvm install --lts && nvm use --lts` to upgrade.
+
+---
+
+### Docker
+
+Docker is required to run the backend using the recommended setup. To check if you have it, run `docker --version` in your terminal.
+
+**Installing Docker**
+
+- **macOS**: Download and install [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/). It includes Docker Engine, Docker Compose, and a GUI dashboard. Supports both Intel and Apple Silicon (M1/M2/M3).
+- **Windows**: Download [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/). Requires WSL 2 (Windows Subsystem for Linux) — the installer will prompt you to set this up if needed.
+- **Linux**: Install Docker Engine via your package manager. For Ubuntu/Debian run `sudo apt install docker.io docker-compose-plugin`, then add your user to the docker group with `sudo usermod -aG docker $USER` and restart your session. For other distros, follow the [official Docker Engine install docs](https://docs.docker.com/engine/install/).
+
+Once installed, verify everything is working with:
+
+```bash
+docker --version         # should print Docker version 24.x.x or higher
+docker compose version   # should print Docker Compose version v2.x.x or higher
+```
+
+> **Note**: This project uses `docker compose` (V2, no hyphen). If you're on an older system with only `docker-compose` (V1), consider upgrading Docker Desktop or installing the `docker-compose-plugin` package.
+
+---
+
 ## Installation
 
 ### Frontend (Mobile) - npm

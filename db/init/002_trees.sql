@@ -57,7 +57,8 @@ CREATE TABLE IF NOT EXISTS trees (
 
   created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-  approval_status    approval_status NOT NULL DEFAULT 'pending'
+  -- TODO: revert to DEFAULT 'pending' once admin approval role is implemented
+  approval_status    approval_status NOT NULL DEFAULT 'approved'
 );
 
 -- 5) Observations
@@ -71,7 +72,8 @@ CREATE TABLE IF NOT EXISTS observations (
   observed_at         TIMESTAMPTZ,
 
   created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  approval_status    approval_status NOT NULL DEFAULT 'pending'
+  -- TODO: revert to DEFAULT 'pending' once admin approval role is implemented
+  approval_status    approval_status NOT NULL DEFAULT 'approved'
 );
 
 -- 6) Observation Photos

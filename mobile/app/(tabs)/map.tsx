@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated";
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
 import MapImpl from "../../src/features/map/platform/MapImpl";
 import { getPins } from "../../src/features/map/map.api";
@@ -20,11 +20,18 @@ import { useSpeciesOptions } from "@/src/features/trees/hooks/useSpeciesOptions"
 import { useLoading } from "@/src/ui/loading/LoadingProvider";
 import { createTree } from "@/src/features/trees/usecases/createTree";
 import { usePinsInBbox } from "@/src/features/trees/hooks/usePinsInBox";
+import ObservationForm from "@/src/features/observations/components/ObservationForm";
+import {
+  EMPTY_OBSERVATION_FORM,
+  buildDetailsPayload,
+  type ObservationFormData,
+} from "@/src/features/observations/observations.types";
 
 export default function MapRoute() {
   const router = useRouter();
 
   const [error, setError] = useState<string | null>(null);
+  const [pinsVersion, setPinsVersion] = useState(0);
   const [recenterToken, setRecenterToken] = useState(0);
   const [submitting, setSubmitting]   = useState(false);
   const [viewport, setViewport] = useState<{ region: MapRegion; bbox: Bbox } | null>(null);
@@ -53,8 +60,11 @@ export default function MapRoute() {
   const [sheetStage, setSheetStage] = useState<0 | 1 | 2>(0);
   const sheetIndex = sheetStage === 0 ? -1 : sheetStage === 1 ? 0 : 1;
 
-  // Species input state 
+  // Species input state
   const [speciesId, setSpeciesId] = useState<string | null>(null);
+
+  // Observation form state for Stage 2
+  const [formData, setFormData] = useState<ObservationFormData>(EMPTY_OBSERVATION_FORM);
 
   // Loaction input (picked by tapping on the map when sheet is at stage 1)
   type LatLng = { latitude: number; longitude: number };
@@ -75,38 +85,38 @@ export default function MapRoute() {
     setSheetStage(0);
     setSpeciesId(null);
     setDraftLocation(null);
+    setFormData(EMPTY_OBSERVATION_FORM);
   };
   
   const { withLoading } = useLoading();
 
-  async function handleSaveTree(){
-        try {
-          await withLoading(
-            () => createTree({
-              tree:{
-                locationLat: draftLocation!.latitude,
-                locationLng: draftLocation!.longitude,
-                speciesId: parseInt(speciesId!),
-                },
-              observation: {
-                title: "",
-                noteText: "",
-              }
-            }),
-            {
-              message: "Saving ...",
-              blocking: true,
-              background: "transparent",
-            }
-          );
-          // AuthProvider sets isLoggedIn → Expo Router redirects to (tabs)
-        } catch (e: any) {
-          Alert.alert("Failed to save tree", e.message ?? "Please try again.");
-        } finally {
-          Alert.alert("Tree added", "Your tree has been added successfully.");
-          closeSheet();
-          setSubmitting(false);
-        }
+  async function handleSaveTree() {
+    const details = buildDetailsPayload(formData.details);
+    try {
+      await withLoading(
+        () => createTree({
+          tree: {
+            locationLat: draftLocation!.latitude,
+            locationLng: draftLocation!.longitude,
+            speciesId: parseInt(speciesId!),
+          },
+          observation: {
+            title:      formData.title      || undefined,
+            noteText:   formData.noteText   || undefined,
+            observedAt: formData.observedAt || undefined,
+          },
+          ...(details ? { details } : {}),
+        }),
+        { message: "Saving...", blocking: true, background: "transparent" }
+      );
+      Alert.alert("Tree added", "Your tree has been added successfully.");
+      closeSheet();
+      setPinsVersion((v) => v + 1);
+    } catch (e: any) {
+      Alert.alert("Failed to save tree", e.message ?? "Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   useEffect(() => {
@@ -239,9 +249,11 @@ export default function MapRoute() {
           handleComponent={null}
           handleIndicatorStyle={{ backgroundColor: "#999" }}
         >
-          <BottomSheetView style={styles.sheetContent}>
-            {sheetStage === 1 ? (
-              <>
+          {sheetStage === 1 && (
+            <BottomSheetScrollView
+              contentContainerStyle={styles.sheetContent}
+              keyboardShouldPersistTaps="handled"
+            >
                 <Text style={styles.sheetTitle}>Add a Tree</Text>
 
                 <View style={styles.field}>
@@ -277,33 +289,34 @@ export default function MapRoute() {
                     <Text style={styles.primaryBtnText}>Next</Text>
                   </Pressable>
                 </View>
-              </>
-            ) : sheetStage === 2 ? (
-              <>
-              <View style={{paddingTop: 70 }}>
-                <Text style={styles.sheetTitle}>Observation</Text>
-                <Text style={{ color: "#666", marginBottom: 12 }}>
-                  (This will become your existing observation modal UI)
-                </Text>
+            </BottomSheetScrollView>
+          )}
 
-                <Pressable
-                  onPress={() => setSheetStage(1)}
-                  style={styles.secondaryBtn}
-                >
+          {sheetStage === 2 && (
+            <View style={styles.stage2Container}>
+              <View style={styles.stage2Header}>
+                <Text style={styles.sheetTitle}>Initial Observation</Text>
+                <Text style={styles.stage2Sub}>
+                  All fields are optional — you can add more observations later.
+                </Text>
+              </View>
+
+              <ObservationForm value={formData} onChange={setFormData} isNewTree />
+
+              <View style={styles.stage2Footer}>
+                <Pressable onPress={() => setSheetStage(1)} style={styles.secondaryBtn}>
                   <Text style={styles.secondaryBtnText}>Back</Text>
                 </Pressable>
-
                 <Pressable
                   onPress={handleSaveTree}
                   disabled={submitting}
-                  style={styles.primaryBtn}
+                  style={[styles.primaryBtn, { opacity: submitting ? 0.6 : 1 }]}
                 >
-                  <Text style={styles.primaryBtnText}>Save</Text>
+                  <Text style={styles.primaryBtnText}>Save Tree</Text>
                 </Pressable>
               </View>
-              </>
-            ) : null}
-          </BottomSheetView>
+            </View>
+          )}
         </BottomSheet>
       ) : null}
     </View>
@@ -415,6 +428,18 @@ const styles = StyleSheet.create({
   },
 
   row: { flexDirection: "row", gap: 10, justifyContent: "flex-end" },
+
+  stage2Container: { flex: 1 },
+  stage2Header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 },
+  stage2Sub: { fontSize: 12, color: Brand.midGray, marginTop: 2 },
+  stage2Footer: {
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "flex-end",
+    padding: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Brand.pale,
+  },
 
   primaryBtn: {
     backgroundColor: Brand.charcoal,

@@ -25,12 +25,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 
 import { useAuth } from "@/src/features/auth/AuthProvider";
 import { Brand } from "@/constants/theme";
 import { HomeGrid, type GridItem } from "../../src/features/home/components/HomeGrid";
 import { getPins } from "../../src/features/map/map.api";
 import type { Pin } from "../../src/features/map/map.types";
+import { useLiveLocation } from "@/src/features/location/hooks/useLiveLocation";
 
 // HugATree logo — place PNG at mobile/assets/images/logo.png
 const LOGO = require("@/assets/images/logo.png");
@@ -62,6 +64,47 @@ export default function HomeScreen() {
   const textCol  = isDark ? Brand.offWhite : Brand.charcoal;
   const subCol   = isDark ? Brand.softGray : Brand.midGray;
   const borderCl = isDark ? Brand.deep     : Brand.pale;
+
+  const [pins, setPins] = useState<Pin[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await getPins();
+        if (!cancelled) setPins(data);
+      } catch {
+        if (!cancelled) setPins([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── Location label ──
+  // Tracks the user's live GPS position via the shared useLiveLocation hook.
+  const locationState = useLiveLocation();
+  const [cityName, setCityName] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Only attempt reverse-geocoding once we have a valid fix.
+    if (locationState.status !== "success") return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const [place] = await Location.reverseGeocodeAsync(locationState.location);
+        if (cancelled) return;
+        // Prefer the most specific available name: city > district > subregion > region.
+        const name =
+          place.city ?? place.district ?? place.subregion ?? place.region ?? null;
+        setCityName(name);
+      } catch {
+        if (!cancelled) setCityName(null);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [locationState.location]);
 
   async function handleLogout() {
     try {
@@ -150,26 +193,19 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* ── Stats strip ── */}
-        <View style={styles.statsStrip}>
-          <View style={[styles.statPill, { backgroundColor: cardBg, borderColor: borderCl }]}>
-            <Ionicons name="leaf" size={14} color={Brand.primary} />
-            <Text style={[styles.statLabel, { color: textCol }]}>
-              {50} <Text style={{ color: subCol }}>trees</Text>
-            </Text>
-          </View>
-          <View style={[styles.statPill, { backgroundColor: cardBg, borderColor: borderCl }]}>
-            <Ionicons name="document-text-outline" size={14} color={Brand.amber} />
-            <Text style={[styles.statLabel, { color: textCol }]}>
-              0 <Text style={{ color: subCol }}>reports</Text>
-            </Text>
-          </View>
-          <View style={[styles.statPill, { backgroundColor: cardBg, borderColor: borderCl }]}>
-            <Ionicons name="ribbon-outline" size={14} color={Brand.mid} />
-            <Text style={[styles.statLabel, { color: textCol }]}>
-              — <Text style={{ color: subCol }}>rank</Text>
-            </Text>
-          </View>
+        {/* ── Location banner ──
+            Shows "Find trees in [City]" once the device position is resolved,
+            "Locating you…" while permission / GPS is pending, or a neutral
+            fallback when location is unavailable (denied / error). */}
+        <View style={styles.locationBanner}>
+          <Ionicons name="location-outline" size={16} color={Brand.primary} />
+          <Text style={[styles.locationText, { color: textCol }]}>
+            {cityName
+              ? `Find trees in ${cityName}`
+              : locationState.status === "loading" || locationState.status === "idle"
+              ? "Locating you…"
+              : "Find trees near you"}
+          </Text>
         </View>
 
         {/* ── Section label ── */}
@@ -222,25 +258,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  /* Stats strip */
-  statsStrip: {
+  /* Location banner — replaces the stats-pill strip */
+  locationBanner: {
     flexDirection: "row",
-    gap: 8,
+    alignItems: "center",
+    gap: 6,
     paddingHorizontal: 16,
     paddingTop: 4,
     paddingBottom: 12,
   },
-  statPill: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-  },
-  statLabel: { fontSize: 12, fontWeight: "600" },
+  locationText: { fontSize: 14, fontWeight: "600" },
 
   /* Section label */
   sectionLabel: {
