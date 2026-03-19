@@ -19,3 +19,5 @@ export type MapRegion = {
   latitudeDelta: number;
   longitudeDelta: number;
 };
+
+export type MapLayer = "standard" | "hybrid";

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View , Text} from "react-native";
 import ClusteredMapViewIOS from "react-native-map-clustering";
 import { Callout, Marker } from "react-native-maps";
-import type { Bbox, MapRegion } from "../map.types";
+import type { Bbox, MapRegion, MapLayer } from "../map.types";
 import type { TreePin } from "../../trees/trees.types";   
 import type { LatLng } from "../../location/hooks/useLiveLocation";
 import { regionToBbox } from "../map.functions";
@@ -19,6 +19,7 @@ type Props = {
   onMapPress?: (coord: LatLng) => void;
   draftMarker?: LatLng | null;
   onViewportChange?: (args: { region: MapRegion; bbox: Bbox }) => void;
+  mapLayer: MapLayer;
 };
 
 function isFiniteNumber(n: unknown): n is number {
@@ -48,6 +49,7 @@ export default function MapImpl({
   onMapPress,
   draftMarker,
   onViewportChange,
+  mapLayer,
 }: Props) {
   const mapRef = useRef<any>(null);
 
@@ -130,6 +132,7 @@ export default function MapImpl({
         key={renderKey}
         style={StyleSheet.absoluteFill}
         initialRegion={FALLBACK_REGION}
+        mapType={mapLayer}
         radius={45}
         minPoints={2}
         maxZoom={20}
