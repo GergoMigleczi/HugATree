@@ -1,28 +1,61 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { Region } from "react-native-maps";
 import type { Pin } from "../map.types";
 import MapImpl from "../platform/MapImpl";
 import { useLiveLocation } from "../../location/hooks/useLiveLocation";
 
+import type { Bbox, MapRegion } from "../map.types";
+import { usePinsInBbox } from "@/src/features/trees/hooks/usePinsInBox";
+
+// same LatLng shape you use elsewhere
+type LatLng = { latitude: number; longitude: number };
 
 type Props = {
   width: number;
   height: number;
-  pins: Pin[];
   onPress: () => void;
 };
 
-export function MapPreviewTile({ width, height, pins, onPress }: Props) {
+function distanceApproxMeters(a: LatLng, b: LatLng) {
+  const dLat = (a.latitude - b.latitude) * 111_000;
+  const dLng = (a.longitude - b.longitude) * 111_000 * Math.cos((a.latitude * Math.PI) / 180);
+  return Math.sqrt(dLat * dLat + dLng * dLng);
+}
+
+export function MapPreviewTile({ width, height, onPress }: Props) {
   const loc = useLiveLocation();
   const userLocation = loc.status === "success" ? loc.location : null;
 
-  const renderKey = useMemo(() => {
-    if (!pins?.length) return "preview-0";
-    const first = pins[0]?.id ?? "x";
-    const last = pins[pins.length - 1]?.id ?? "y";
-    return `preview-${pins.length}-${first}-${last}`;
-  }, [pins]);
+  const [viewport, setViewport] = useState<{ region: MapRegion; bbox: Bbox } | null>(null);
+  const [searchViewport, setSearchViewport] = useState<{ region: MapRegion; bbox: Bbox } | null>(null);
+  const didAutoSearch = useRef(false);
+
+  // Capture viewport continuously
+  const onViewportChange = (v: { region: MapRegion; bbox: Bbox }) => {
+    setViewport(v);
+  };
+
+  // Auto-search once:
+  // - if no userLocation -> use first viewport (fallback)
+  // - if userLocation -> wait until map center ~ user
+  useEffect(() => {
+    if (didAutoSearch.current) return;
+    if (!viewport) return;
+
+    didAutoSearch.current = true;
+    setSearchViewport(viewport);
+  }, [viewport]);
+
+  // Fetch pins only when searchViewport is set (i.e. auto-search fired)
+  const pinsState = usePinsInBbox({
+    viewport: searchViewport,
+    enabled: true,
+    limit: 5000,
+  });
+
+  // MapImpl expects Pin[] (your map Pin type) — if TreePin differs, map here.
+  // If your TreePin already matches Pin, you can just do: const pins = pinsState.pins as Pin[]
+  const pins: Pin[] = (pinsState.pins as any) ?? [];
 
   return (
     <Pressable onPress={onPress} style={[styles.wrap, { width, height }]}>
@@ -31,17 +64,14 @@ export function MapPreviewTile({ width, height, pins, onPress }: Props) {
           pins={pins}
           userLocation={userLocation}
           onPinPress={() => {}}
-          renderKey={renderKey} 
+          mode="preview"
+          onViewportChange={onViewportChange}
         />
 
-        {/* optional overlay tint so text/icons are readable */}
         <View style={styles.overlay} />
       </View>
 
-      {/* put your usual tile content here (title, subtitle, etc.) */}
-      <View style={styles.content}>
-        {/* e.g. <Text>Map</Text> */}
-      </View>
+      <View style={styles.content}>{/* tile content */}</View>
     </Pressable>
   );
 }

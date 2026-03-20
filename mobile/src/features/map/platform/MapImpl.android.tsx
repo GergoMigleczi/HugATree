@@ -2,8 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import MapView, { Marker, Region } from "react-native-maps";
 import { GOOGLE_MAP_STYLE } from "../googleMapStyle";
-import type { Pin } from "../map.types";
+import type { Bbox, MapRegion, MapLayer } from "../map.types";
+import type { TreePin } from "../../trees/trees.types";
 import type { LatLng } from "../../location/hooks/useLiveLocation";
+import { regionToBbox } from "../map.functions";
 import { FALLBACK_REGION, USER_FOCUS_DELTA } from "../mapDefaults";
 
 
@@ -31,16 +33,18 @@ const sameRegion = (a: Region, b: Region) =>
   nearlyEqual(a.longitudeDelta, b.longitudeDelta);
 
 type Props = {
-  pins: Pin[];
+  pins: TreePin[];
   initialRegion: Region;
   userLocation?: LatLng | null;
-  onPinPress: (pin: Pin) => void;
+  onPinPress: (pin: TreePin) => void;
   renderKey?: string | number;
   recenterToken?: number;
   mode?: "full" | "preview";
   pickLocationEnabled?: boolean;
   onMapPress?: (coord: LatLng) => void;
   draftMarker?: LatLng | null;
+  onViewportChange?: (args: { region: MapRegion; bbox: Bbox }) => void;
+  mapLayer: MapLayer;
 };
 
 export default function MapImpl({
@@ -53,6 +57,8 @@ export default function MapImpl({
   pickLocationEnabled = false,
   onMapPress,
   draftMarker,
+  onViewportChange,
+  mapLayer,
 }: Props) {
   const mapRef = useRef<MapView | null>(null);
   const [region, setRegion] = useState<Region>(FALLBACK_REGION);
@@ -85,10 +91,14 @@ export default function MapImpl({
   }, [clusterIndex, region]);
 
   const pinById = useMemo(() => {
-    const m = new Map<string, Pin>();
-    for (const p of pins) m.set(p.id, p);
+    const m = new Map<string, TreePin>();
+    for (const p of pins) m.set(String(p.id), p);
     return m;
   }, [pins]);
+
+  const emitViewport = (r: MapRegion) => {
+      onViewportChange?.({ region: r, bbox: regionToBbox(r) });
+    };
 
   // 1) On first location fix, centre once (helps on open)
   useEffect(() => {
@@ -96,14 +106,21 @@ export default function MapImpl({
 
     mapRef.current?.animateToRegion(
       {
-        ...FALLBACK_REGION,
         latitude: userLocation.latitude,
         longitude: userLocation.longitude,
+        ...USER_FOCUS_DELTA,
       },
       450
     );
 
+    emitViewport({
+      latitude: userLocation.latitude,
+      longitude: userLocation.longitude,
+      ...USER_FOCUS_DELTA,
+    });
+
     hasInitiallyCentered.current = true;
+
   }, [userLocation]);
 
   // 2) If recenterToken changes, turn follow back on and recenter
@@ -147,8 +164,8 @@ export default function MapImpl({
       style={StyleSheet.absoluteFill}
       customMapStyle={GOOGLE_MAP_STYLE}
       initialRegion={FALLBACK_REGION}
-      onRegionChangeComplete={(r) => setRegion((prev) => (sameRegion(prev, r) ? prev : r))}
       mapPadding={{ top: 24, right: 24, bottom: 24, left: 24 }}
+      mapType={mapLayer}
       // drag disables follow
       showsUserLocation={true}
       showsMyLocationButton={false}
@@ -161,6 +178,18 @@ export default function MapImpl({
         if (!pickLocationEnabled) return;
         const coord = e.nativeEvent.coordinate as LatLng;
         onMapPress?.(coord);
+      }}
+      onRegionChangeComplete={(r) => {
+        setRegion((prev) => (sameRegion(prev, r) ? prev : r));
+
+        const region: MapRegion = {
+          latitude: r.latitude,
+          longitude: r.longitude,
+          latitudeDelta: r.latitudeDelta,
+          longitudeDelta: r.longitudeDelta,
+        };
+        const bbox = regionToBbox(region);
+        onViewportChange?.({ region, bbox });
       }}
     >
       {/* Draft marker (user-picked location) */}
@@ -210,12 +239,11 @@ export default function MapImpl({
 
         return (
           <Marker
-            key={`pin-${id}`}
+            key={String(pin.id)}
+            identifier={`pin-${pin.id}`}
             coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
-            title={`Pin ${id}`}
-            tracksViewChanges={false}
             onPress={() => onPinPress(pin)}
-          />
+          ></Marker>
         );
       })}
     </MapView>

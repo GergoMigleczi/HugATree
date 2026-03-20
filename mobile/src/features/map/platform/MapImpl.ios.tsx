@@ -1,21 +1,25 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View , Text} from "react-native";
 import ClusteredMapViewIOS from "react-native-map-clustering";
-import { Marker } from "react-native-maps";
-import type { Pin } from "../map.types";
+import { Callout, Marker } from "react-native-maps";
+import type { Bbox, MapRegion, MapLayer } from "../map.types";
+import type { TreePin } from "../../trees/trees.types";   
 import type { LatLng } from "../../location/hooks/useLiveLocation";
+import { regionToBbox } from "../map.functions";
 import { FALLBACK_REGION, USER_FOCUS_DELTA } from "../mapDefaults";
 
 type Props = {
-  pins: Pin[];
+  pins: TreePin[];
   userLocation?: LatLng | null;
-  onPinPress: (pin: Pin) => void;
+  onPinPress: (pin: TreePin) => void;
   recenterToken?: number;
   renderKey?: string | number;
   mode?: "full" | "preview";
   pickLocationEnabled?: boolean;
   onMapPress?: (coord: LatLng) => void;
   draftMarker?: LatLng | null;
+  onViewportChange?: (args: { region: MapRegion; bbox: Bbox }) => void;
+  mapLayer: MapLayer;
 };
 
 function isFiniteNumber(n: unknown): n is number {
@@ -44,6 +48,8 @@ export default function MapImpl({
   pickLocationEnabled = false,
   onMapPress,
   draftMarker,
+  onViewportChange,
+  mapLayer,
 }: Props) {
   const mapRef = useRef<any>(null);
 
@@ -64,6 +70,10 @@ export default function MapImpl({
   // Only render draft marker if valid.
   const canRenderDraft = isValidLatLng(draftMarker);
 
+  const emitViewport = (r: MapRegion) => {
+    onViewportChange?.({ region: r, bbox: regionToBbox(r) });
+  };
+
   useEffect(() => {
     if (!safeUserLocation || hasInitiallyCentered.current) return;
 
@@ -71,11 +81,16 @@ export default function MapImpl({
       {
         latitude: safeUserLocation.latitude,
         longitude: safeUserLocation.longitude,
-        latitudeDelta: FALLBACK_REGION.latitudeDelta,
-        longitudeDelta: FALLBACK_REGION.longitudeDelta,
+        ...USER_FOCUS_DELTA,
       },
       450
     );
+    
+    emitViewport({
+      latitude: safeUserLocation.latitude,
+      longitude: safeUserLocation.longitude,
+      ...USER_FOCUS_DELTA,
+    });
 
     hasInitiallyCentered.current = true;
   }, [safeUserLocation]);
@@ -117,6 +132,7 @@ export default function MapImpl({
         key={renderKey}
         style={StyleSheet.absoluteFill}
         initialRegion={FALLBACK_REGION}
+        mapType={mapLayer}
         radius={45}
         minPoints={2}
         maxZoom={20}
@@ -136,6 +152,16 @@ export default function MapImpl({
 
           onMapPress?.({ latitude: coord.latitude, longitude: coord.longitude });
         }}
+        onRegionChangeComplete={(r: any) => {
+          const region: MapRegion = {
+            latitude: r.latitude,
+            longitude: r.longitude,
+            latitudeDelta: r.latitudeDelta,
+            longitudeDelta: r.longitudeDelta,
+          };
+          const bbox = regionToBbox(region);
+          onViewportChange?.({ region, bbox });
+        }}
       >
         {/* Draft marker (user-picked location) */}
         {canRenderDraft ? (
@@ -151,8 +177,16 @@ export default function MapImpl({
             key={String(p.id)}
             identifier={`pin-${p.id}`}
             coordinate={{ latitude: p.latitude, longitude: p.longitude }}
-            onPress={() => onPinPress(p)}
-          />
+          >
+            <Callout tooltip={false}
+              onPress={() => onPinPress(p)}>
+              <View style={{ padding: 4 }}>
+                <Text style={{ fontWeight: "600" }}>
+                  {p.speciesCommonName ?? "Unknown species"}
+                </Text>
+              </View>
+            </Callout>
+          </Marker>
         ))}
       </ClusteredMapViewIOS>
     </View>

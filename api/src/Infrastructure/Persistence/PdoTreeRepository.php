@@ -79,8 +79,8 @@ final class PdoTreeRepository implements TreeRepository
       $countSql = "
         SELECT COUNT(*)::int AS total
         FROM trees t
-        WHERE t.approval_status = 'approved'
-          AND t.location && $envelopeSql
+        WHERE /*t.approval_status = 'approved'
+          AND*/ t.location && $envelopeSql
           AND ST_Intersects(t.location, $envelopeSql)
       ";
 
@@ -103,8 +103,8 @@ final class PdoTreeRepository implements TreeRepository
           t.location_lng
         FROM trees t
         LEFT JOIN species s ON s.id = t.species_id
-        WHERE t.approval_status = 'approved'
-          AND t.location && $envelopeSql
+        WHERE /*t.approval_status = 'approved'
+          AND*/ t.location && $envelopeSql
           AND ST_Intersects(t.location, $envelopeSql)
         ORDER BY t.id
         LIMIT :limit
