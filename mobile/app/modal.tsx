@@ -301,8 +301,8 @@ export default function TreeModalScreen() {
             </Text>
           </View>
           
-          <Pressable onPress={() => openQr()}>
-            <Text>Show QR</Text>
+          <Pressable onPress={() => openQr()} style={styles.qrBtn}>
+            <Text>QR</Text>
           </Pressable>
           {renderHeaderAction()}
         </View>
@@ -507,6 +507,12 @@ const styles = StyleSheet.create({
   headerText:  { flex: 1 },
   treeTitle:   { fontSize: 15, fontWeight: "800", color: Brand.charcoal },
   treeMeta:    { fontSize: 11, color: Brand.midGray, marginTop: 1 },
+
+  qrBtn: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: Brand.amberLight,
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
+  },
 
   addBtn: {
     flexDirection: "row", alignItems: "center", gap: 4,
