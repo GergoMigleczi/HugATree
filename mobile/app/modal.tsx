@@ -35,6 +35,7 @@ import { getTreeDetailsApi } from "@/src/features/trees/trees.api";
 import type { TreeDetail } from "@/src/features/trees/trees.types";
 import TabBar, { type TabDef } from "@/src/ui/TabBar";
 import EmptyState from "@/src/ui/EmptyState";
+import TreeQrCode from "@/src/features/trees/components/TreeQrCode";
 
 /* ─── Tab definitions ──────────────────────────────────────────────────────── */
 
@@ -111,6 +112,9 @@ export default function TreeModalScreen() {
   const [formData,     setFormData]     = useState<ObservationFormData>(EMPTY_OBSERVATION_FORM);
   const [wildlifeForm, setWildlifeForm] = useState<WildlifeFormData>(EMPTY_WILDLIFE_FORM);
   const [healthForm,   setHealthForm]   = useState<HealthFormData>(EMPTY_HEALTH_FORM);
+
+  /* ── QR code modal ───────────────────────────────────────────────────────── */
+  const [qrVisible, setQrVisible] = useState(false);
 
   /* ── Load observations on mount ─────────────────────────────────────────── */
   useEffect(() => {
@@ -267,6 +271,16 @@ export default function TreeModalScreen() {
     return "note";
   }
 
+  /* ── Open QR code modal ──────────────────────────────────────────────────── */
+  function openQr() {
+    setQrVisible(true);
+  }
+
+  /* ── Close QR code modal ─────────────────────────────────────────────────── */
+  function closeQr() {
+    setQrVisible(false);
+  }
+
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
     <View style={styles.container}>
@@ -286,7 +300,10 @@ export default function TreeModalScreen() {
                 : `${observations?.length ?? 0} observation${observations?.length === 1 ? "" : "s"}`}
             </Text>
           </View>
-
+          
+          <Pressable onPress={() => openQr()}>
+            <Text>Show QR</Text>
+          </Pressable>
           {renderHeaderAction()}
         </View>
       </SafeAreaView>
@@ -440,6 +457,11 @@ export default function TreeModalScreen() {
         </>
       )}
 
+      <TreeQrCode
+        visible={qrVisible}
+        treeId={numericTreeId}
+        onClose={closeQr}
+      />
     </View>
   );
 }
