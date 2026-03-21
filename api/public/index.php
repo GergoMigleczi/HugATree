@@ -31,6 +31,7 @@ use App\Application\UseCase\GetSpecies;
 use App\Application\UseCase\GetTreeObservations;
 use App\Application\UseCase\AddObservation;
 use App\Application\UseCase\GetTreeDetails;
+use App\Application\UseCase\GetTree;
 
 use Dotenv\Dotenv;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -43,6 +44,25 @@ $dotenv = Dotenv::createImmutable(__DIR__ . "/..");
 $dotenv->load();
 
 $app = AppFactory::create();
+
+// CORS
+$app->options('/{routes:.+}', function (Request $request, Response $response) {
+    return $response;
+});
+
+$app->add(function (Request $request, $handler): Response {
+    if ($request->getMethod() === 'OPTIONS') {
+        $response = new Response();
+    } else {
+        $response = $handler->handle($request);
+    }
+
+    return $response
+        ->withHeader('Access-Control-Allow-Origin', '*')
+        ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+});
+
 $app->addBodyParsingMiddleware();
 
 // DEV error settings (do NOT enable in prod)
@@ -83,6 +103,7 @@ $getSpecies = new GetSpecies($speciesRepo);
 $getTreeObservations = new GetTreeObservations($observationRepo);
 $addObservation = new AddObservation($tx, $observationRepo, $treeDetailRepo);
 $getTreeDetails = new GetTreeDetails($treeDetailRepo);
+$getTree = new GetTree($treeRepo, $treeDetailRepo);
 
 // --- trees use case ---
 $createTree = new CreateTree(
@@ -103,11 +124,14 @@ $app->get("/health", function (Request $req, Response $res) use ($pdo) {
 AuthRoutes::register($app, $registerUser, $loginUser, $refreshSession, $logoutSession);
 MeRoutes::register($app, $getMe);
 
-TreesRoutes::registerPublic($app, $getTreesInBbox, $getSpecies);
+TreesRoutes::registerPublic($app, $getTreesInBbox, $getSpecies, $getTree);
 
 // Protected trees endpoints (JWT required)
 $app->group('', function ($group) use ($createTree, $getTreeObservations, $addObservation, $getTreeDetails) {
   TreesRoutes::registerProtected($group, $createTree, $getTreeObservations, $addObservation, $getTreeDetails);
 })->add(new AuthMiddleware());
+
+$routeCollector = $app->getRouteCollector();
+$routes = $routeCollector->getRoutes();
 
 $app->run();

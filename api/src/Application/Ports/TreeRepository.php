@@ -33,4 +33,24 @@ interface TreeRepository
         float $maxLng,
         int $limit
     ): array;
+
+    /**
+   * Get a Particular tree
+   *
+   * Returns a limited set of matching trees together with the total number
+   * of matches ignoring the limit.
+   * @param int   $treeId 
+   *
+   * @return array{
+   *     id:int,
+   *     speciesCommonName:?string,
+   *     lat:float,
+   *     lng:float,
+   *     plantedAt: date,
+   *     plantedBy: varchar,
+   *     addressText: varchar,
+   *     adoptedBy: varchar,
+   * }
+   */
+    public function getATree(int $treeId): ?array;
 }

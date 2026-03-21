@@ -96,7 +96,7 @@ Dependencies are installed automatically in the Docker container. The database w
 
 To stop the services:
 ```bash
-docker-compose down
+docker compose down
 ```
 
 To nuke the local db and rebuild fresh:
