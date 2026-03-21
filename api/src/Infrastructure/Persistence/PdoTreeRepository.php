@@ -137,4 +137,60 @@ final class PdoTreeRepository implements TreeRepository
           'limit' => $limit, // optional but useful client-side
       ];
   }
+
+  /**
+   * Get a Particular tree
+   *
+   * Returns a limited set of matching trees together with the total number
+   * of matches ignoring the limit.
+   * @param int   $treeId 
+   *
+   * @return array{
+   *     id:int,
+   *     speciesCommonName:?string,
+   *     lat:float,
+   *     lng:float,
+   *     plantedAt: date,
+   *     plantedBy: varchar,
+   *     addressText: varchar,
+   *     adoptedBy: varchar,
+   * }
+   */
+  public function getATree(
+  int $treeId
+  ): array {
+      
+    $sql = "
+      SELECT
+        t.id,
+        s.common_name AS species_common_name,
+        t.location_lat,
+        t.location_lng,
+        t.planted_at,
+        t.planted_by,
+        t.address_text,
+        (SELECT u.display_name FROM users u WHERE u.id = t.adopted_by_user_id) AS adopted_by
+      FROM trees t
+      LEFT JOIN species s ON s.id = t.species_id
+      WHERE t.id = :treeId
+      ";
+      
+      $treeStmt = $this->pdo->prepare($sql);
+      $treeStmt->bindValue(':treeId', $treeId, \PDO::PARAM_INT);
+      $treeStmt->execute();
+
+      $rows = $treeStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+      return [
+        'id' => (int)$rows[0]['id'],
+        'speciesCommonName' => $rows[0]['species_common_name'] !== null ? (string)$rows[0]['species_common_name'] : null,
+        'lat' => (float)$rows[0]['location_lat'],
+        'lng' => (float)$rows[0]['location_lng'],
+        'plantedAt' => $rows[0]['planted_at'],
+        'plantedBy' => $rows[0]['planted_by'],
+        'addressText' => $rows[0]['address_text'],
+        'adoptedBy' => $rows[0]['adopted_by']
+      ];
+  }
+
 }

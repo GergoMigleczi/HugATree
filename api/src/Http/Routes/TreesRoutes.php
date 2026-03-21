@@ -9,6 +9,7 @@ use App\Application\UseCase\GetSpecies;
 use App\Application\UseCase\GetTreeObservations;
 use App\Application\UseCase\AddObservation;
 use App\Application\UseCase\GetTreeDetails;
+use App\Application\UseCase\GetTree;
 use App\Http\Json;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -17,7 +18,11 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 // so this works both for $app and for $app->group(...) $group.
 final class TreesRoutes
 {
-    public static function registerPublic($routes, GetTreesInBbox $getTreesInBbox, GetSpecies $getSpecies): void
+    public static function registerPublic($routes,
+        GetTreesInBbox $getTreesInBbox,
+        GetSpecies $getSpecies,
+        GetTree $getTree
+    ): void
     {
         // GET /trees (public) - bbox viewport query
         $routes->get('/trees', function (Request $req, Response $res) use ($getTreesInBbox) {
@@ -55,6 +60,25 @@ final class TreesRoutes
                 return Json::ok($res, ['error' => 'Unexpected server error'], 500);
             }
         });
+
+        // GET /trees/:id (public) 
+        $routes->get('/trees/{id}', function (Request $req, Response $res, array $args) use ($getTree) {
+            $treeId = (int)($args['id'] ?? 0);
+            if ($treeId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid tree id'], 400);
+            }
+            try {
+                $result = $getTree->execute($treeId);
+                if (!$result) {
+                    return Json::ok($res, ['error' => 'Tree not found'], 404);
+                }
+                return Json::ok($res, $result, 200);
+            } catch (\Throwable $e) {
+                error_log('[GET /trees/' . $treeId . '] ' . $e->getMessage());
+                error_log($e->getTraceAsString());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        }); 
     }
 
     public static function registerProtected(
