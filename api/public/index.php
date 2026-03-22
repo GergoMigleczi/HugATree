@@ -20,6 +20,9 @@ use App\Infrastructure\Persistence\PdoSpeciesRepository;
 use App\Infrastructure\Security\JwtTokenService;
 use App\Infrastructure\Security\PhpPasswordHasher;
 
+use App\Application\Service\TreeMetricsCalculator;
+use App\Application\Service\WeatherSummaryService;
+
 use App\Application\UseCase\GetMe;
 use App\Application\UseCase\LoginUser;
 use App\Application\UseCase\LogoutSession;
@@ -92,6 +95,10 @@ $treeDetailRepo = new PdoTreeDetailHistoryRepository($pdo);
 $photoRepo = new PdoObservationPhotoRepository($pdo);
 $speciesRepo = new PdoSpeciesRepository($pdo);
 
+// --- services ---
+$metricsCalculator = new TreeMetricsCalculator();
+$weatherSummaryService = new WeatherSummaryService();
+
 // --- use cases ---
 $registerUser = new RegisterUser($userRepo, $passwordHasher);
 $loginUser = new LoginUser($userRepo, $sessionRepo, $passwordHasher, $tokenService);
@@ -101,16 +108,13 @@ $getMe = new GetMe($userRepo);
 $getTreesInBbox = new GetTreesInBbox($treeRepo);
 $getSpecies = new GetSpecies($speciesRepo);
 $getTreeObservations = new GetTreeObservations($observationRepo);
-$addObservation = new AddObservation($tx, $observationRepo, $treeDetailRepo);
+$addObservation = new AddObservation($tx, $observationRepo, $treeDetailRepo, $treeRepo, $metricsCalculator, $weatherSummaryService);
 $getTreeDetails = new GetTreeDetails($treeDetailRepo);
 $getTree = new GetTree($treeRepo, $treeDetailRepo);
-
-// --- trees use case ---
 $createTree = new CreateTree(
   $tx,
   $treeRepo,
-  $observationRepo,
-  $treeDetailRepo,
+  $addObservation,
   $photoRepo
 );
 

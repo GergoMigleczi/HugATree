@@ -331,6 +331,8 @@ export default function TreeModalScreen() {
                   <DetailRow label="Trunk diameter"  value={details.trunkDiameterCm != null ? `${details.trunkDiameterCm} cm` : null} sub={[details.diameterHeightCm != null ? `@ ${details.diameterHeightCm} cm` : null, details.diameterMethod].filter(Boolean).join(" · ")} />
                   <DetailRow label="Canopy diameter" value={details.canopyDiameterM != null ? `${details.canopyDiameterM} m` : null}  sub={details.canopyDensity} />
                   <DetailRow label="Est. age"        value={details.probableAgeYears != null ? `${details.probableAgeYears} yrs` : null} sub={details.ageBasis} />
+                  <DetailRow label="Est. CO2 Sequestered" value={details.estimatedCo2SequesteredYearKg != null ? `${details.estimatedCo2SequesteredYearKg} kg` : null} sub="Estimated Co2 Sequestered / Year" />
+                  <DetailRow label="Est. Water Use" value={details.estimatedWaterUseYearL != null ? `${details.estimatedWaterUseYearL} L` : null} sub="Estimated Water Use / Year" />
                   {(details.recordedByName || details.recordedAt) && (
                     <View style={styles.detailsFooter}>
                       {details.recordedByName && (
