@@ -150,4 +150,8 @@ export type TreeDetail = {
   canopyDensity: string | null;
   recordedAt: string | null;
   recordedByName: string | null;
+  estimatedCo2SequesteredYearKg: number | null;
+  estimatedCo2StoredKg: number | null;
+  estimatedWaterUseYearL: number | null;
+  calculatedAt: string | null;
 };

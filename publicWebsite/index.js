@@ -66,6 +66,9 @@ function renderTree(data) {
     setText("factDiameter", formatNullable(latestHistory.trunkDiameterCm, " cm"));
     setText("factCanopy", formatNullable(latestHistory.canopyDiameterM, " m"));
     setText("factDensity", latestHistory.canopyDensity);
+    setText("factCo2Sequestered", formatNullable(latestHistory.estimatedCo2SequesteredYearKg, " kg"));
+    setText("factWaterUse", formatNullable(latestHistory.estimatedWaterUseYearL, " L"));
+
 
     setText("detailPlantedAt", tree.plantedAt || "Unknown");
     setText("detailPlantedBy", tree.plantedBy || "Unknown");
@@ -124,3 +127,8 @@ async function loadTree() {
 }
 
 loadTree();
+
+document.addEventListener("DOMContentLoaded", function () {
+    const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+    popoverTriggerList.forEach(el => new bootstrap.Popover(el));
+  });

@@ -18,7 +18,15 @@ final class PdoTreeDetailHistoryRepository implements TreeDetailHistoryRepositor
             height_m, height_method,
             trunk_diameter_cm, diameter_height_cm, diameter_method,
             canopy_diameter_m, canopy_density,
-            recorded_by_user_id, recorded_at
+            recorded_by_user_id, recorded_at,
+            estimated_co2_stored_kg,
+            estimated_co2_sequestered_year_kg,
+            estimated_water_use_year_l,
+            weather_period_start,
+            weather_period_end,
+            weather_source,
+            calculation_method_version,
+            calculated_at
           ) VALUES (
             :tree_id, :observation_id,
             :probable_age_years, :age_basis,
@@ -26,7 +34,15 @@ final class PdoTreeDetailHistoryRepository implements TreeDetailHistoryRepositor
             :trunk_diameter_cm, :diameter_height_cm, :diameter_method,
             :canopy_diameter_m, :canopy_density,
             :recorded_by_user_id,
-            COALESCE(:recorded_at::timestamptz, NOW())
+            COALESCE(:recorded_at::timestamptz, NOW()),
+            :estimated_co2_stored_kg,
+            :estimated_co2_sequestered_year_kg,
+            :estimated_water_use_year_l,
+            :weather_period_start,
+            :weather_period_end,
+            :weather_source,
+            :calculation_method_version,
+            COALESCE(:calculated_at::timestamptz, NOW())
           )
           RETURNING id
         ";
@@ -45,7 +61,16 @@ final class PdoTreeDetailHistoryRepository implements TreeDetailHistoryRepositor
             ':canopy_diameter_m' => $d['canopy_diameter_m'],
             ':canopy_density' => $d['canopy_density'],
             ':recorded_by_user_id' => $d['recorded_by_user_id'],
-            ':recorded_at' => $d['recorded_at'],
+            ':recorded_at' => $d['recorded_at'] ?? null,
+
+            ':estimated_co2_stored_kg' => $d['estimated_co2_stored_kg'] ?? null,
+            ':estimated_co2_sequestered_year_kg' => $d['estimated_co2_sequestered_year_kg'] ?? null,
+            ':estimated_water_use_year_l' => $d['estimated_water_use_year_l'] ?? null,
+            ':weather_period_start' => $d['weather_period_start'] ?? null,
+            ':weather_period_end' => $d['weather_period_end'] ?? null,
+            ':weather_source' => $d['weather_source'] ?? null,
+            ':calculation_method_version' => $d['calculation_method_version'] ?? null,
+            ':calculated_at' => $d['calculated_at'] ?? null,
         ]);
 
         return (int)$stmt->fetchColumn();
@@ -67,6 +92,14 @@ final class PdoTreeDetailHistoryRepository implements TreeDetailHistoryRepositor
                 d.canopy_diameter_m,
                 d.canopy_density,
                 d.recorded_at,
+                d.estimated_co2_stored_kg,
+                d.estimated_co2_sequestered_year_kg,
+                d.estimated_water_use_year_l,
+                d.weather_period_start,
+                d.weather_period_end,
+                d.weather_source,
+                d.calculation_method_version,
+                d.calculated_at,
                 u.display_name AS recorded_by_name
             FROM tree_detail_history d
             LEFT JOIN users u ON u.id = d.recorded_by_user_id
@@ -82,19 +115,28 @@ final class PdoTreeDetailHistoryRepository implements TreeDetailHistoryRepositor
         if (!$row) return null;
 
         return [
-            'id'               => (int)$row['id'],
-            'observationId'    => (int)$row['observation_id'],
+            'id' => (int)$row['id'],
+            'observationId' => $row['observation_id'] !== null ? (int)$row['observation_id'] : null,
             'probableAgeYears' => $row['probable_age_years'] !== null ? (int)$row['probable_age_years'] : null,
-            'ageBasis'         => $row['age_basis'],
-            'heightM'          => $row['height_m'] !== null ? (float)$row['height_m'] : null,
-            'heightMethod'     => $row['height_method'],
-            'trunkDiameterCm'  => $row['trunk_diameter_cm'] !== null ? (float)$row['trunk_diameter_cm'] : null,
+            'ageBasis' => $row['age_basis'],
+            'heightM' => $row['height_m'] !== null ? (float)$row['height_m'] : null,
+            'heightMethod' => $row['height_method'],
+            'trunkDiameterCm' => $row['trunk_diameter_cm'] !== null ? (float)$row['trunk_diameter_cm'] : null,
             'diameterHeightCm' => $row['diameter_height_cm'] !== null ? (float)$row['diameter_height_cm'] : null,
-            'diameterMethod'   => $row['diameter_method'],
-            'canopyDiameterM'  => $row['canopy_diameter_m'] !== null ? (float)$row['canopy_diameter_m'] : null,
-            'canopyDensity'    => $row['canopy_density'],
-            'recordedAt'       => $row['recorded_at'],
-            'recordedByName'   => $row['recorded_by_name'],
+            'diameterMethod' => $row['diameter_method'],
+            'canopyDiameterM' => $row['canopy_diameter_m'] !== null ? (float)$row['canopy_diameter_m'] : null,
+            'canopyDensity' => $row['canopy_density'],
+            'recordedAt' => $row['recorded_at'],
+            'recordedByName' => $row['recorded_by_name'],
+
+            'estimatedCo2StoredKg' => $row['estimated_co2_stored_kg'] !== null ? (float)$row['estimated_co2_stored_kg'] : null,
+            'estimatedCo2SequesteredYearKg' => $row['estimated_co2_sequestered_year_kg'] !== null ? (float)$row['estimated_co2_sequestered_year_kg'] : null,
+            'estimatedWaterUseYearL' => $row['estimated_water_use_year_l'] !== null ? (float)$row['estimated_water_use_year_l'] : null,
+            'weatherPeriodStart' => $row['weather_period_start'],
+            'weatherPeriodEnd' => $row['weather_period_end'],
+            'weatherSource' => $row['weather_source'],
+            'calculationMethodVersion' => $row['calculation_method_version'],
+            'calculatedAt' => $row['calculated_at'],
         ];
     }
 }
