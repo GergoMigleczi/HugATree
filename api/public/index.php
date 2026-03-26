@@ -4,6 +4,7 @@ declare(strict_types=1);
 use App\Http\Json;
 use App\Http\Routes\AuthRoutes;
 use App\Http\Routes\MeRoutes;
+use App\Http\Routes\PhotoRoutes;
 use App\Http\Routes\TreesRoutes;
 use App\Http\Middleware\AuthMiddleware;
 
@@ -19,12 +20,14 @@ use App\Infrastructure\Persistence\PdoSpeciesRepository;
 
 use App\Infrastructure\Security\JwtTokenService;
 use App\Infrastructure\Security\PhpPasswordHasher;
+use App\Infrastructure\Storage\LocalFileStorageService;
 
 use App\Application\Service\TreeMetricsCalculator;
 use App\Application\Service\WeatherSummaryService;
 
 use App\Application\UseCase\GetMe;
 use App\Application\UseCase\LoginUser;
+use App\Application\UseCase\UploadPhoto;
 use App\Application\UseCase\LogoutSession;
 use App\Application\UseCase\RefreshSession;
 use App\Application\UseCase\RegisterUser;
@@ -95,6 +98,10 @@ $treeDetailRepo = new PdoTreeDetailHistoryRepository($pdo);
 $photoRepo = new PdoObservationPhotoRepository($pdo);
 $speciesRepo = new PdoSpeciesRepository($pdo);
 
+// --- file storage ---
+$fileStorage = new LocalFileStorageService($_ENV['UPLOADS_PATH'] ?? '/var/uploads');
+$uploadPhoto = new UploadPhoto($fileStorage);
+
 // --- services ---
 $metricsCalculator = new TreeMetricsCalculator();
 $weatherSummaryService = new WeatherSummaryService();
@@ -129,10 +136,12 @@ AuthRoutes::register($app, $registerUser, $loginUser, $refreshSession, $logoutSe
 MeRoutes::register($app, $getMe);
 
 TreesRoutes::registerPublic($app, $getTreesInBbox, $getSpecies, $getTree);
+PhotoRoutes::registerPublic($app, $fileStorage);
 
-// Protected trees endpoints (JWT required)
-$app->group('', function ($group) use ($createTree, $getTreeObservations, $addObservation, $getTreeDetails) {
+// Protected endpoints (JWT required)
+$app->group('', function ($group) use ($createTree, $getTreeObservations, $addObservation, $getTreeDetails, $uploadPhoto) {
   TreesRoutes::registerProtected($group, $createTree, $getTreeObservations, $addObservation, $getTreeDetails);
+  PhotoRoutes::registerProtected($group, $uploadPhoto);
 })->add(new AuthMiddleware());
 
 $routeCollector = $app->getRouteCollector();
