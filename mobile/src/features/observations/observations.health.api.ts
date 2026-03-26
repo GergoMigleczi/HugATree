@@ -22,6 +22,7 @@ export async function createHealthApi(
   treeId: number,
   observation: ObservationFormData,
   health: HealthFormData,
+  photoKeys: string[] = [],
 ): Promise<CreateHealthResponseApi> {
   return authFetch<CreateHealthResponseApi>(`/trees/${treeId}/health`, {
     method: "POST",
@@ -30,6 +31,7 @@ export async function createHealthApi(
         title:      observation.title      || undefined,
         noteText:   observation.noteText   || undefined,
         observedAt: observation.observedAt || undefined,
+        ...(photoKeys.length > 0 ? { photoKeys } : {}),
       },
       healthStatus: health.healthStatus || undefined,
       riskLevel:    health.riskLevel    || undefined,

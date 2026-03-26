@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,7 +14,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import { Brand } from "@/constants/theme";
-import { getTreeObservationsApi } from "@/src/features/observations/observations.api";
+import { getTreeObservationsApi, uploadPhotoApi } from "@/src/features/observations/observations.api";
 import { getTreeWildlifeApi, createWildlifeApi } from "@/src/features/observations/observations.wildlife.api";
 import { getTreeHealthApi, createHealthApi } from "@/src/features/observations/observations.health.api";
 import { createObservation } from "@/src/features/observations/usecases/createObservation";
@@ -35,6 +36,7 @@ import { getTreeDetailsApi } from "@/src/features/trees/trees.api";
 import type { TreeDetail } from "@/src/features/trees/trees.types";
 import TabBar, { type TabDef } from "@/src/ui/TabBar";
 import EmptyState from "@/src/ui/EmptyState";
+import PhotoViewer from "@/src/ui/PhotoViewer";
 import TreeQrCode from "@/src/features/trees/components/TreeQrCode";
 
 /* ─── Tab definitions ──────────────────────────────────────────────────────── */
@@ -116,6 +118,9 @@ export default function TreeModalScreen() {
   /* ── QR code modal ───────────────────────────────────────────────────────── */
   const [qrVisible, setQrVisible] = useState(false);
 
+  /* ── Full-screen photo viewer ────────────────────────────────────────────── */
+  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
+
   /* ── Load observations on mount ─────────────────────────────────────────── */
   useEffect(() => {
     if (!numericTreeId) return;
@@ -165,9 +170,21 @@ export default function TreeModalScreen() {
   async function handleSave() {
     if (!numericTreeId) return;
     try {
+      // Upload photo first if one was selected — same pattern as map.tsx
+      let photoKeys: string[] = [];
+      if (formData.photoUri) {
+        try {
+          const storageKey = await uploadPhotoApi(formData.photoUri);
+          photoKeys = [storageKey];
+        } catch {
+          Alert.alert("Photo upload failed", "Please try again or save without a photo.");
+          return;
+        }
+      }
+
       if (tab === "wildlife") {
         await withLoading(
-          () => createWildlifeApi(numericTreeId, formData, wildlifeForm),
+          () => createWildlifeApi(numericTreeId, formData, wildlifeForm, photoKeys),
           { message: "Saving...", blocking: true, background: "transparent" }
         );
         // Refresh both wildlife list and observations (observation is created too)
@@ -180,7 +197,7 @@ export default function TreeModalScreen() {
 
       } else if (tab === "health") {
         await withLoading(
-          () => createHealthApi(numericTreeId, formData, healthForm),
+          () => createHealthApi(numericTreeId, formData, healthForm, photoKeys),
           { message: "Saving...", blocking: true, background: "transparent" }
         );
         const [newHealth, newObs] = await Promise.all([
@@ -192,7 +209,7 @@ export default function TreeModalScreen() {
 
       } else {
         await withLoading(
-          () => createObservation(numericTreeId, formData),
+          () => createObservation(numericTreeId, formData, photoKeys),
           { message: "Saving...", blocking: true, background: "transparent" }
         );
         const items = await getTreeObservationsApi(numericTreeId);
@@ -281,6 +298,9 @@ export default function TreeModalScreen() {
     setQrVisible(false);
   }
 
+  /* ── Derived ────────────────────────────────────────────────────────────── */
+  const heroPhotoUri = observations?.find((o) => o.photoKey)?.photoKey ?? null;
+
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
     <View style={styles.container}>
@@ -366,6 +386,16 @@ export default function TreeModalScreen() {
           {/* Overview + History tabs — observation list */}
           {(tab === "overview" || tab === "history") && (
             <ScrollView contentContainerStyle={styles.listContent}>
+              {/* Hero photo — first observation photo, overview tab only */}
+              {tab === "overview" && heroPhotoUri && (
+                <Pressable onPress={() => setViewingPhoto(heroPhotoUri)} style={styles.heroWrap}>
+                  <Image source={{ uri: heroPhotoUri }} style={styles.heroImage} resizeMode="cover" />
+                  <View style={styles.heroOverlay}>
+                    <Ionicons name="expand-outline" size={18} color="#fff" />
+                  </View>
+                </Pressable>
+              )}
+
               {loadError && (
                 <Text style={styles.errorText}>{loadError}</Text>
               )}
@@ -384,6 +414,7 @@ export default function TreeModalScreen() {
                   key={obs.id}
                   item={obs}
                   isInitial={tab === "overview" && idx === 0}
+                  onPhotoPress={setViewingPhoto}
                 />
               ))}
             </ScrollView>
@@ -406,7 +437,7 @@ export default function TreeModalScreen() {
                 />
               )}
               {(wildlife ?? []).map((w) => (
-                <ObservationCard key={w.id} item={wildlifeToCard(w)} isInitial={false} />
+                <ObservationCard key={w.id} item={wildlifeToCard(w)} isInitial={false} onPhotoPress={setViewingPhoto} />
               ))}
             </ScrollView>
           )}
@@ -428,7 +459,7 @@ export default function TreeModalScreen() {
                 />
               )}
               {(health ?? []).map((h) => (
-                <ObservationCard key={h.id} item={healthToCard(h)} isInitial={false} />
+                <ObservationCard key={h.id} item={healthToCard(h)} isInitial={false} onPhotoPress={setViewingPhoto} />
               ))}
             </ScrollView>
           )}
@@ -463,6 +494,11 @@ export default function TreeModalScreen() {
         visible={qrVisible}
         treeId={numericTreeId}
         onClose={closeQr}
+      />
+
+      <PhotoViewer
+        uri={viewingPhoto}
+        onClose={() => setViewingPhoto(null)}
       />
     </View>
   );
@@ -526,6 +562,23 @@ const styles = StyleSheet.create({
   cancelBtnText: { fontSize: 13, fontWeight: "600", color: Brand.midGray },
 
   listContent: { padding: 16, gap: 10, paddingBottom: 32 },
+
+  heroWrap: {
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  heroImage: {
+    width: "100%",
+    height: 200,
+  },
+  heroOverlay: {
+    position: "absolute",
+    bottom: 8,
+    right: 8,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    borderRadius: 6,
+    padding: 4,
+  },
   spinner:     { marginTop: 40 },
 
   errorText: {

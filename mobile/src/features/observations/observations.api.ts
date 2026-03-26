@@ -54,7 +54,8 @@ export async function getTreeObservationsApi(treeId: number): Promise<Observatio
  */
 export async function createObservationApi(
   treeId: number,
-  form: ObservationFormData
+  form: ObservationFormData,
+  photoKeys: string[] = [],
 ): Promise<CreateObservationResponseApi> {
   const details = buildDetailsPayload(form.details);
 
@@ -65,6 +66,7 @@ export async function createObservationApi(
       noteText:   form.noteText   || undefined,
       observedAt: form.observedAt || undefined,
       ...(details ? { details } : {}),
+      ...(photoKeys.length > 0 ? { photoKeys } : {}),
     },
   });
 }

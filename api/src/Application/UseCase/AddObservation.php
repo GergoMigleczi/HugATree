@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Application\UseCase;
 
 use App\Application\Ports\DbTransaction;
+use App\Application\Ports\ObservationPhotoRepository;
 use App\Application\Ports\ObservationRepository;
 use App\Application\Ports\TreeDetailHistoryRepository;
 use App\Application\Ports\TreeRepository;
@@ -15,6 +16,7 @@ final class AddObservation
     public function __construct(
         private DbTransaction $tx,
         private ObservationRepository $observations,
+        private ObservationPhotoRepository $photos,
         private TreeDetailHistoryRepository $treeDetails,
         private TreeRepository $trees,
         private TreeMetricsCalculator $metricsCalculator,
@@ -144,6 +146,14 @@ final class AddObservation
             }
 
             $this->treeDetails->insert(array_merge($detailPayload, $metrics));
+        }
+
+        foreach ($input['photoKeys'] ?? [] as $storageKey) {
+            $this->photos->insert([
+                'observation_id'      => $observationId,
+                'uploaded_by_user_id' => $userId,
+                'storage_key'         => (string) $storageKey,
+            ]);
         }
 
         return ['observationId' => $observationId];

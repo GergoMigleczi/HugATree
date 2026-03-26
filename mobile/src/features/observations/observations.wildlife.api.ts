@@ -49,6 +49,7 @@ export async function createWildlifeApi(
   treeId: number,
   observation: ObservationFormData,
   wildlife: WildlifeFormData,
+  photoKeys: string[] = [],
 ): Promise<CreateWildlifeResponseApi> {
   return authFetch<CreateWildlifeResponseApi>(`/trees/${treeId}/wildlife`, {
     method: "POST",
@@ -57,6 +58,7 @@ export async function createWildlifeApi(
         title:      observation.title      || undefined,
         noteText:   observation.noteText   || undefined,
         observedAt: observation.observedAt || undefined,
+        ...(photoKeys.length > 0 ? { photoKeys } : {}),
       },
       wildlifeSpeciesId: wildlife.wildlifeSpeciesId
         ? parseInt(wildlife.wildlifeSpeciesId, 10)
