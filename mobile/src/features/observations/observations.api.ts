@@ -1,6 +1,39 @@
 import { authFetch } from "@/src/api/authFetch";
+import { getAccessToken } from "@/src/features/auth/tokens";
+import { API_URL } from "@/src/config/config";
 import type { ObservationFormData, ObservationItem, CreateObservationResponseApi } from "./observations.types";
 import { buildDetailsPayload } from "./observations.types";
+
+/**
+ * POST /photos/upload
+ * Uploads a single photo and returns its storage key.
+ * Uses fetch directly (not apiRequest) because multipart/form-data
+ * must not have Content-Type set manually — the browser sets it with the boundary.
+ */
+export async function uploadPhotoApi(localUri: string): Promise<string> {
+  const accessToken = await getAccessToken();
+
+  const formData = new FormData();
+  formData.append("photo", {
+    uri: localUri,
+    type: "image/jpeg",
+    name: "photo.jpg",
+  } as any);
+
+  const res = await fetch(`${API_URL}/photos/upload`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: formData,
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data?.error ?? `Upload failed (${res.status})`);
+  }
+
+  return data.storageKey as string;
+}
 
 /**
  * GET /trees/:treeId/observations
