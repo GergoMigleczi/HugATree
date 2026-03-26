@@ -50,6 +50,14 @@ final class CreateTree
             $observationResult = $this->addObservation->executeInsideTransaction($treeId, $userId, $obs);
             $observationId = $observationResult['observationId'];
 
+            foreach ($obs['photoKeys'] ?? [] as $storageKey) {
+                $this->photos->insert([
+                    'observation_id'      => $observationId,
+                    'uploaded_by_user_id' => $userId,
+                    'storage_key'         => (string) $storageKey,
+                ]);
+            }
+
             return [
                 'treeId' => $treeId,
                 'observationId' => $observationId,
