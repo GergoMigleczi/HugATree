@@ -29,6 +29,7 @@ import {
   type WildlifeFormData,
   type HealthFormData,
 } from "@/src/features/observations/observations.types";
+import { uploadPhotoApi } from "@/src/features/observations/observations.api";
 
 export default function MapRoute() {
   const router = useRouter();
@@ -124,6 +125,18 @@ export default function MapRoute() {
     const details = buildDetailsPayload(formData.details);
 
     try {
+      // Upload photo first if one was selected, then include the key in the payload
+      let photoKeys: string[] = [];
+      if (formData.photoUri) {
+        try {
+          const storageKey = await uploadPhotoApi(formData.photoUri);
+          photoKeys = [storageKey];
+        } catch {
+          Alert.alert("Photo upload failed", "Please try again or save without a photo.");
+          return;
+        }
+      }
+
       await withLoading(
         () => createTree({
           tree: {
@@ -136,6 +149,7 @@ export default function MapRoute() {
             title:      formData.title      || undefined,
             noteText:   formData.noteText   || undefined,
             observedAt: formData.observedAt || undefined,
+            ...(photoKeys.length > 0 ? { photoKeys } : {}),
           },
           ...(details ? { details } : {}),
         }),
