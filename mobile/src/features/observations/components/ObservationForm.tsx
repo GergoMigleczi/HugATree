@@ -17,8 +17,8 @@ import type {
 } from "../observations.types";
 import { EMPTY_DETAILS, EMPTY_HEALTH_ISSUE } from "../observations.types";
 import TabBar, { type TabDef } from "@/src/ui/TabBar";
-import EmptyState from "@/src/ui/EmptyState";
 import ChipSelect from "@/src/ui/ChipSelect";
+import PhotoPicker from "./PhotoPicker";
 import SpeciesSelect from "@/src/features/trees/components/SpeciesSelect";
 import { useWildlifeSpeciesOptions } from "../hooks/useWildlifeSpeciesOptions";
 
@@ -29,7 +29,7 @@ type TabId = "note" | "details" | "photos" | "wildlife" | "health";
 const TABS: TabDef<TabId>[] = [
   { id: "note",     label: "Note",     icon: "document-text-outline"          },
   { id: "details",  label: "Details",  icon: "resize-outline"                 },
-  { id: "photos",   label: "Photos",   icon: "camera-outline",   stub: true   },
+  { id: "photos",   label: "Photos",   icon: "camera-outline"                 },
   { id: "wildlife", label: "Wildlife", icon: "leaf-outline"                   },
   { id: "health",   label: "Health",   icon: "heart-outline"                  },
 ];
@@ -380,12 +380,11 @@ export default function ObservationForm({
           </>
         )}
 
-        {/* ── Stub tab (photos only) ── */}
-        {TABS.find((t) => t.id === activeTab)?.stub && (
-          <EmptyState
-            icon="construct-outline"
-            title="Coming soon"
-            subtitle="Photo upload will be available in a future update."
+        {/* ── Photos tab ── */}
+        {activeTab === "photos" && (
+          <PhotoPicker
+            value={value.photoUri}
+            onChange={(uri) => setField("photoUri", uri)}
           />
         )}
       </ScrollView>
