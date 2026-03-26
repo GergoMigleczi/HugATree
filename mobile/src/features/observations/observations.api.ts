@@ -38,9 +38,14 @@ export async function uploadPhotoApi(localUri: string): Promise<string> {
 /**
  * GET /trees/:treeId/observations
  * Returns observations sorted: initial (first-ever) first, then by observed_at ASC.
+ * photoKey is resolved to a full URL so ObservationCard can pass it directly to <Image>.
  */
 export async function getTreeObservationsApi(treeId: number): Promise<ObservationItem[]> {
-  return authFetch<ObservationItem[]>(`/trees/${treeId}/observations`, { method: "GET" });
+  const items = await authFetch<ObservationItem[]>(`/trees/${treeId}/observations`, { method: "GET" });
+  return items.map((item) => ({
+    ...item,
+    photoKey: item.photoKey ? `${API_URL}/photos/${item.photoKey.split("/").pop()}` : null,
+  }));
 }
 
 /**
