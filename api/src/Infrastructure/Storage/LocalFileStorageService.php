@@ -19,9 +19,12 @@ final class LocalFileStorageService implements FileStorageService
             mkdir($dir, 0755, true);
         }
 
-        if (!rename($sourcePath, $dest)) {
+        // copy + unlink instead of rename: rename() fails across different
+        // filesystem mount points (e.g. /tmp on the overlay fs vs the Docker volume).
+        if (!copy($sourcePath, $dest)) {
             throw new \RuntimeException('Failed to store uploaded file.');
         }
+        unlink($sourcePath);
 
         return $storageKey;
     }
