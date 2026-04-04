@@ -71,6 +71,11 @@ export default function MapRoute() {
   const [customSpeciesName, setCustomSpeciesName] = useState("");
   const [showCustomSpecies, setShowCustomSpecies] = useState(false);
 
+  // Tree-level optional fields (stage 1)
+  const [plantedBy, setPlantedBy] = useState("");
+  const [plantedAt, setPlantedAt] = useState("");
+  const [addressText, setAddressText] = useState("");
+
   // Observation form state for Stage 2
   const [formData, setFormData] = useState<ObservationFormData>(EMPTY_OBSERVATION_FORM);
   const [wildlifeData, setWildlifeData] = useState<WildlifeFormData>(EMPTY_WILDLIFE_FORM);
@@ -101,6 +106,9 @@ export default function MapRoute() {
     setCustomSpeciesName("");
     setShowCustomSpecies(false);
     setDraftLocation(null);
+    setPlantedBy("");
+    setPlantedAt("");
+    setAddressText("");
     setFormData(EMPTY_OBSERVATION_FORM);
     setWildlifeData(EMPTY_WILDLIFE_FORM);
     setHealthData(EMPTY_HEALTH_FORM);
@@ -144,6 +152,9 @@ export default function MapRoute() {
             locationLng: draftLocation!.longitude,
             ...(speciesId ? { speciesId: parseInt(speciesId) } : {}),
             ...(customSpeciesName.trim() ? { customSpeciesName: customSpeciesName.trim() } : {}),
+            ...(plantedBy.trim() ? { plantedBy: plantedBy.trim() } : {}),
+            ...(plantedAt.trim() ? { plantedAt: plantedAt.trim() } : {}),
+            ...(addressText.trim() ? { addressText: addressText.trim() } : {}),
           },
           observation: {
             title:      formData.title      || undefined,
@@ -375,6 +386,42 @@ export default function MapRoute() {
                   </View>
                 </View>
 
+                <Text style={styles.optionalSectionLabel}>Optional tree details</Text>
+
+                <View style={styles.field}>
+                  <Text style={styles.label}>Planted by</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={plantedBy}
+                    onChangeText={setPlantedBy}
+                    placeholder="e.g. City Council, Jane Smith"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+
+                <View style={styles.field}>
+                  <Text style={styles.label}>Date planted</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={plantedAt}
+                    onChangeText={setPlantedAt}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#999"
+                    keyboardType="numbers-and-punctuation"
+                  />
+                </View>
+
+                <View style={styles.field}>
+                  <Text style={styles.label}>Address</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={addressText}
+                    onChangeText={setAddressText}
+                    placeholder="e.g. 12 Oak Street"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+
                 <View style={styles.row}>
                   <Pressable onPress={closeSheet} style={styles.secondaryBtn}>
                     <Text style={styles.secondaryBtnText}>Cancel</Text>
@@ -523,6 +570,24 @@ const styles = StyleSheet.create({
 
   field: { gap: 6 },
   label: { fontSize: 12, fontWeight: "700", color: Brand.charcoal },
+  optionalSectionLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: Brand.midGray,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: 4,
+  },
+  textInput: {
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    paddingHorizontal: 12,
+    backgroundColor: "#fafafa",
+    color: Brand.charcoal,
+    fontSize: 14,
+  },
   fakeInput: {
     height: 44,
     borderRadius: 10,
