@@ -26,7 +26,7 @@ import { useWildlifeSpeciesOptions } from "../hooks/useWildlifeSpeciesOptions";
 
 type TabId = "note" | "details" | "photos" | "wildlife" | "health";
 
-const TABS: TabDef<TabId>[] = [
+const ALL_TABS: TabDef<TabId>[] = [
   { id: "note",     label: "Note",     icon: "document-text-outline"          },
   { id: "details",  label: "Details",  icon: "resize-outline"                 },
   { id: "photos",   label: "Photos",   icon: "camera-outline"                 },
@@ -34,19 +34,26 @@ const TABS: TabDef<TabId>[] = [
   { id: "health",   label: "Health",   icon: "heart-outline"                  },
 ];
 
+const NEW_TREE_TABS: TabDef<TabId>[] = ALL_TABS.filter(
+  (t) => t.id !== "wildlife" && t.id !== "health"
+);
+
 /* ─── Props ────────────────────────────────────────────────────────────────── */
 
 type Props = {
   value: ObservationFormData;
   onChange: (next: ObservationFormData) => void;
-  wildlifeValue: WildlifeFormData;
-  onWildlifeChange: (next: WildlifeFormData) => void;
-  healthValue: HealthFormData;
-  onHealthChange: (next: HealthFormData) => void;
+  wildlifeValue?: WildlifeFormData;
+  onWildlifeChange?: (next: WildlifeFormData) => void;
+  healthValue?: HealthFormData;
+  onHealthChange?: (next: HealthFormData) => void;
   /** Shows an amber notice that this is the first (initial) observation */
   isNewTree?: boolean;
   /** Which sub-tab to open first */
   initialTab?: TabId;
+  /** Renders content in a plain View instead of ScrollView — use when
+   *  the parent (e.g. BottomSheetScrollView) owns scrolling */
+  noScroll?: boolean;
 };
 
 /* ─── Component ────────────────────────────────────────────────────────────── */
@@ -60,7 +67,9 @@ export default function ObservationForm({
   onHealthChange,
   isNewTree,
   initialTab,
+  noScroll = false,
 }: Props) {
+  const tabs = isNewTree ? NEW_TREE_TABS : ALL_TABS;
   const [activeTab, setActiveTab] = useState<TabId>(initialTab ?? "note");
 
   // Wildlife species — loaded lazily when the wildlife tab is first opened
@@ -99,17 +108,18 @@ export default function ObservationForm({
     onHealthChange({ ...healthValue, issues: next });
   }
 
+  const ScrollContainer = noScroll ? View : ScrollView;
+  const scrollProps = noScroll
+    ? { style: styles.scrollContent }
+    : { style: styles.scroll, contentContainerStyle: styles.scrollContent, keyboardShouldPersistTaps: "handled" as const };
+
   return (
     <View style={styles.container}>
       {/* Tab bar */}
-      <TabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+      <TabBar tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       {/* Tab content */}
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollContainer {...scrollProps}>
         {/* ── Note tab ── */}
         {activeTab === "note" && (
           <>
@@ -387,7 +397,7 @@ export default function ObservationForm({
             onChange={(uri) => setField("photoUri", uri)}
           />
         )}
-      </ScrollView>
+      </ScrollContainer>
     </View>
   );
 }

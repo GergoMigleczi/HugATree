@@ -323,7 +323,6 @@ export default function MapRoute() {
           enableDynamicSizing={false}
           enablePanDownToClose={false}
           enableHandlePanningGesture={false}
-          enableContentPanningGesture={false}
           handleComponent={null}
           handleIndicatorStyle={{ backgroundColor: "#999" }}
         >
@@ -439,22 +438,28 @@ export default function MapRoute() {
 
           {sheetStage === 2 && (
             <View style={styles.stage2Container}>
-              <View style={styles.stage2Header}>
-                <Text style={styles.sheetTitle}>Initial Observation</Text>
-                <Text style={styles.stage2Sub}>
-                  Height and trunk diameter are required (* fields).
-                </Text>
-              </View>
+              <BottomSheetScrollView
+                contentContainerStyle={styles.stage2ScrollContent}
+                keyboardShouldPersistTaps="handled"
+              >
+                <View style={styles.stage2Header}>
+                  <Text style={styles.sheetTitle}>Initial Observation</Text>
+                  <Text style={styles.stage2Sub}>
+                    Height and trunk diameter are required (* fields).
+                  </Text>
+                </View>
 
-              <ObservationForm
-                value={formData}
-                onChange={setFormData}
-                wildlifeValue={wildlifeData}
-                onWildlifeChange={setWildlifeData}
-                healthValue={healthData}
-                onHealthChange={setHealthData}
-                isNewTree
-              />
+                <ObservationForm
+                  value={formData}
+                  onChange={setFormData}
+                  wildlifeValue={wildlifeData}
+                  onWildlifeChange={setWildlifeData}
+                  healthValue={healthData}
+                  onHealthChange={setHealthData}
+                  isNewTree
+                  noScroll
+                />
+              </BottomSheetScrollView>
 
               <View style={styles.stage2Footer}>
                 <Pressable onPress={() => setSheetStage(1)} style={styles.secondaryBtn}>
@@ -606,7 +611,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: 10, justifyContent: "flex-end" },
 
   stage2Container: { flex: 1 },
-  stage2Header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 },
+  stage2ScrollContent: { paddingBottom: 16 },
+  stage2Header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
   stage2Sub: { fontSize: 12, color: Brand.midGray, marginTop: 2 },
   stage2Footer: {
     flexDirection: "row",

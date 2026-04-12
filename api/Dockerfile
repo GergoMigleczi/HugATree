@@ -23,4 +23,4 @@ RUN composer install --no-interaction --no-progress
 
 EXPOSE 8000
 
-CMD ["php", "-S", "0.0.0.0:8000", "-t", "public", "public/index.php"]
+CMD ["php", "-d", "upload_max_filesize=20M", "-d", "post_max_size=25M", "-S", "0.0.0.0:8000", "-t", "public", "public/index.php"]
