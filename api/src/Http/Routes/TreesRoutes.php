@@ -10,6 +10,11 @@ use App\Application\UseCase\GetTreeObservations;
 use App\Application\UseCase\AddObservation;
 use App\Application\UseCase\GetTreeDetails;
 use App\Application\UseCase\GetTree;
+use App\Application\UseCase\GetWildlifeSpecies;
+use App\Application\UseCase\GetTreeWildlife;
+use App\Application\UseCase\CreateWildlife;
+use App\Application\UseCase\GetTreeHealth;
+use App\Application\UseCase\CreateHealth;
 use App\Http\Json;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -18,6 +23,115 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 // so this works both for $app and for $app->group(...) $group.
 final class TreesRoutes
 {
+    public static function registerWildlifeSpeciesPublic($routes, GetWildlifeSpecies $getWildlifeSpecies): void
+    {
+        // GET /trees/wildlife-species (public)
+        $routes->get('/trees/wildlife-species', function (Request $req, Response $res) use ($getWildlifeSpecies) {
+            try {
+                $result = $getWildlifeSpecies->execute();
+                return Json::ok($res, $result, 200);
+            } catch (\Throwable $e) {
+                error_log('[GET /trees/wildlife-species] ' . $e->getMessage());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+    }
+
+    public static function registerWildlifeHealthProtected(
+        $routes,
+        GetTreeWildlife $getTreeWildlife,
+        CreateWildlife $createWildlife,
+        GetTreeHealth $getTreeHealth,
+        CreateHealth $createHealth
+    ): void
+    {
+        // GET /trees/:id/wildlife (JWT required)
+        $routes->get('/trees/{id}/wildlife', function (Request $req, Response $res, array $args) use ($getTreeWildlife) {
+            $treeId = (int)($args['id'] ?? 0);
+            if ($treeId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid tree id'], 400);
+            }
+            try {
+                $items = $getTreeWildlife->execute($treeId);
+                return Json::ok($res, $items, 200);
+            } catch (\Throwable $e) {
+                error_log('[GET /trees/' . $treeId . '/wildlife] ' . $e->getMessage());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+
+        // POST /trees/:id/wildlife (JWT required)
+        $routes->post('/trees/{id}/wildlife', function (Request $req, Response $res, array $args) use ($createWildlife) {
+            $claims = $req->getAttribute('auth');
+            if (!is_array($claims) || empty($claims['sub'])) {
+                return Json::ok($res, ['error' => 'Unauthenticated'], 401);
+            }
+
+            $treeId = (int)($args['id'] ?? 0);
+            if ($treeId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid tree id'], 400);
+            }
+
+            $body = $req->getParsedBody();
+            if (!is_array($body)) {
+                return Json::ok($res, ['error' => 'Invalid JSON body'], 400);
+            }
+
+            try {
+                $result = $createWildlife->execute($treeId, (int)$claims['sub'], $body);
+                return Json::ok($res, $result, 201);
+            } catch (\InvalidArgumentException $e) {
+                return Json::ok($res, ['error' => $e->getMessage()], 422);
+            } catch (\Throwable $e) {
+                error_log('[POST /trees/' . $treeId . '/wildlife] ' . $e->getMessage());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+
+        // GET /trees/:id/health (JWT required)
+        $routes->get('/trees/{id}/health', function (Request $req, Response $res, array $args) use ($getTreeHealth) {
+            $treeId = (int)($args['id'] ?? 0);
+            if ($treeId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid tree id'], 400);
+            }
+            try {
+                $items = $getTreeHealth->execute($treeId);
+                return Json::ok($res, $items, 200);
+            } catch (\Throwable $e) {
+                error_log('[GET /trees/' . $treeId . '/health] ' . $e->getMessage());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+
+        // POST /trees/:id/health (JWT required)
+        $routes->post('/trees/{id}/health', function (Request $req, Response $res, array $args) use ($createHealth) {
+            $claims = $req->getAttribute('auth');
+            if (!is_array($claims) || empty($claims['sub'])) {
+                return Json::ok($res, ['error' => 'Unauthenticated'], 401);
+            }
+
+            $treeId = (int)($args['id'] ?? 0);
+            if ($treeId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid tree id'], 400);
+            }
+
+            $body = $req->getParsedBody();
+            if (!is_array($body)) {
+                return Json::ok($res, ['error' => 'Invalid JSON body'], 400);
+            }
+
+            try {
+                $result = $createHealth->execute($treeId, (int)$claims['sub'], $body);
+                return Json::ok($res, $result, 201);
+            } catch (\InvalidArgumentException $e) {
+                return Json::ok($res, ['error' => $e->getMessage()], 422);
+            } catch (\Throwable $e) {
+                error_log('[POST /trees/' . $treeId . '/health] ' . $e->getMessage());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+    }
+
     public static function registerPublic($routes,
         GetTreesInBbox $getTreesInBbox,
         GetSpecies $getSpecies,

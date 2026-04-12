@@ -17,6 +17,9 @@ use App\Infrastructure\Persistence\PdoObservationRepository;
 use App\Infrastructure\Persistence\PdoTreeDetailHistoryRepository;
 use App\Infrastructure\Persistence\PdoObservationPhotoRepository;
 use App\Infrastructure\Persistence\PdoSpeciesRepository;
+use App\Infrastructure\Persistence\PdoWildlifeSpeciesRepository;
+use App\Infrastructure\Persistence\PdoWildlifeRepository;
+use App\Infrastructure\Persistence\PdoHealthRepository;
 
 use App\Infrastructure\Security\JwtTokenService;
 use App\Infrastructure\Security\PhpPasswordHasher;
@@ -38,6 +41,11 @@ use App\Application\UseCase\GetTreeObservations;
 use App\Application\UseCase\AddObservation;
 use App\Application\UseCase\GetTreeDetails;
 use App\Application\UseCase\GetTree;
+use App\Application\UseCase\GetWildlifeSpecies;
+use App\Application\UseCase\GetTreeWildlife;
+use App\Application\UseCase\CreateWildlife;
+use App\Application\UseCase\GetTreeHealth;
+use App\Application\UseCase\CreateHealth;
 
 use Dotenv\Dotenv;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -97,6 +105,9 @@ $observationRepo = new PdoObservationRepository($pdo);
 $treeDetailRepo = new PdoTreeDetailHistoryRepository($pdo);
 $photoRepo = new PdoObservationPhotoRepository($pdo);
 $speciesRepo = new PdoSpeciesRepository($pdo);
+$wildlifeSpeciesRepo = new PdoWildlifeSpeciesRepository($pdo);
+$wildlifeRepo = new PdoWildlifeRepository($pdo);
+$healthRepo = new PdoHealthRepository($pdo);
 
 // --- file storage ---
 $fileStorage = new LocalFileStorageService($_ENV['UPLOADS_PATH'] ?? '/var/uploads');
@@ -124,6 +135,11 @@ $createTree = new CreateTree(
   $addObservation,
   $photoRepo
 );
+$getWildlifeSpecies = new GetWildlifeSpecies($wildlifeSpeciesRepo);
+$getTreeWildlife = new GetTreeWildlife($wildlifeRepo);
+$createWildlife = new CreateWildlife($tx, $addObservation, $wildlifeRepo);
+$getTreeHealth = new GetTreeHealth($healthRepo);
+$createHealth = new CreateHealth($tx, $addObservation, $healthRepo);
 
 // --- routes ---
 $app->get("/health", function (Request $req, Response $res) use ($pdo) {
@@ -135,12 +151,14 @@ $app->get("/health", function (Request $req, Response $res) use ($pdo) {
 AuthRoutes::register($app, $registerUser, $loginUser, $refreshSession, $logoutSession);
 MeRoutes::register($app, $getMe);
 
+TreesRoutes::registerWildlifeSpeciesPublic($app, $getWildlifeSpecies);
 TreesRoutes::registerPublic($app, $getTreesInBbox, $getSpecies, $getTree);
 PhotoRoutes::registerPublic($app, $fileStorage);
 
 // Protected endpoints (JWT required)
-$app->group('', function ($group) use ($createTree, $getTreeObservations, $addObservation, $getTreeDetails, $uploadPhoto) {
+$app->group('', function ($group) use ($createTree, $getTreeObservations, $addObservation, $getTreeDetails, $uploadPhoto, $getTreeWildlife, $createWildlife, $getTreeHealth, $createHealth) {
   TreesRoutes::registerProtected($group, $createTree, $getTreeObservations, $addObservation, $getTreeDetails);
+  TreesRoutes::registerWildlifeHealthProtected($group, $getTreeWildlife, $createWildlife, $getTreeHealth, $createHealth);
   PhotoRoutes::registerProtected($group, $uploadPhoto);
 })->add(new AuthMiddleware());
 
