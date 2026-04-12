@@ -211,6 +211,7 @@ export default function MapRoute() {
   }, [viewport, userLocation]);
 
   // Animate the map container height based on the sheet stage.
+  // closed => 100%, stage 1 (50% sheet) => 50% map, stage 2 (100% sheet) => 0% (map hidden)
   const mapAnimatedStyle = useAnimatedStyle(() => {
     const heightPct = sheetStage === 0 ? 100 : sheetStage === 1 ? 50 : 0;
     const duration = sheetStage === 1 ? 320 : 50;

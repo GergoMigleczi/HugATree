@@ -93,16 +93,19 @@ export default function ObservationForm({
     key: K,
     val: string
   ) {
+    if (!wildlifeValue || !onWildlifeChange) return;
     onWildlifeChange({ ...wildlifeValue, [key]: val });
   }
 
   function updateHealthIssue(idx: number, patch: Partial<typeof EMPTY_HEALTH_ISSUE>) {
+    if (!healthValue || !onHealthChange) return;
     const next = [...healthValue.issues];
     next[idx] = { ...next[idx], ...patch };
     onHealthChange({ ...healthValue, issues: next });
   }
 
   function removeHealthIssue(idx: number) {
+    if (!healthValue || !onHealthChange) return;
     const next = [...healthValue.issues];
     next.splice(idx, 1);
     onHealthChange({ ...healthValue, issues: next });
