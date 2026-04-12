@@ -85,11 +85,6 @@ final class AddObservation
             $hasCarbonInputs = $this->hasCarbonInputs($detailForCalculator);
             $hasWaterInputs = $this->hasWaterInputs($tree, $detailForCalculator);
             
-            error_log('AddObservation reached');
-            error_log(print_r($detailForCalculator, true));
-            error_log('hasCarbonInputs: ' . ($hasCarbonInputs ? 'yes' : 'no'));
-            error_log('hasWaterInputs: ' . ($hasWaterInputs ? 'yes' : 'no'));
-
             $metrics = [
                 'estimated_co2_stored_kg' => null,
                 'estimated_co2_sequestered_year_kg' => null,
