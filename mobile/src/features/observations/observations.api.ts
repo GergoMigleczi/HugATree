@@ -10,14 +10,22 @@ import { buildDetailsPayload } from "./observations.types";
  * Uses fetch directly (not apiRequest) because multipart/form-data
  * must not have Content-Type set manually — the browser sets it with the boundary.
  */
+function mimeTypeFromUri(uri: string): string {
+  const ext = uri.split(".").pop()?.toLowerCase();
+  if (ext === "png")  return "image/png";
+  if (ext === "webp") return "image/webp";
+  return "image/jpeg";
+}
+
 export async function uploadPhotoApi(localUri: string): Promise<string> {
   const accessToken = await getAccessToken();
+  const mimeType = mimeTypeFromUri(localUri);
 
   const formData = new FormData();
   formData.append("photo", {
     uri: localUri,
-    type: "image/jpeg",
-    name: "photo.jpg",
+    type: mimeType,
+    name: `photo.${mimeType.split("/")[1]}`,
   } as any);
 
   const res = await fetch(`${API_URL}/photos/upload`, {
