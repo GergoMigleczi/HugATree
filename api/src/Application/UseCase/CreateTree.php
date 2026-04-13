@@ -38,6 +38,7 @@ final class CreateTree
         return $this->tx->run(function () use ($userId, $tree, $obs) {
             $treeId = $this->trees->insert([
                 'species_id' => $tree['speciesId'] ?? null,
+                'custom_species_name' => $tree['customSpeciesName'] ?? null,
                 'planted_at' => $tree['plantedAt'] ?? null,
                 'planted_by' => $tree['plantedBy'] ?? null,
                 'location_lat' => (float)$tree['locationLat'],

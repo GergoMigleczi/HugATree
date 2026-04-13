@@ -10,6 +10,7 @@ type Props = {
   loading?: boolean;
   error?: string | null;
   onChange: (nextId: string) => void;
+  onNotListed?: () => void; // called when user picks "Not listed?"
 };
 
 export default function SpeciesSelect({
@@ -19,6 +20,7 @@ export default function SpeciesSelect({
   loading,
   error,
   onChange,
+  onNotListed,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -95,6 +97,23 @@ export default function SpeciesSelect({
               );
             }}
             ItemSeparatorComponent={() => <View style={styles.sep} />}
+            ListFooterComponent={
+              onNotListed ? (
+                <>
+                  <View style={styles.sep} />
+                  <Pressable
+                    onPress={() => {
+                      setOpen(false);
+                      onNotListed();
+                    }}
+                    style={({ pressed }) => [styles.row, { opacity: pressed ? 0.8 : 1 }]}
+                  >
+                    <Text style={styles.notListedTitle}>Not listed?</Text>
+                    <Text style={styles.notListedSub}>Enter species name manually</Text>
+                  </Pressable>
+                </>
+              ) : null
+            }
           />
         </View>
       </Modal>
@@ -138,4 +157,7 @@ const styles = StyleSheet.create({
   rowTitle: { fontWeight: "800", color: Brand.charcoal },
   rowSub: { marginTop: 2, color: "#666" },
   sep: { height: 1, backgroundColor: "#eee" },
+
+  notListedTitle: { fontWeight: "800", color: "#2e7d32" },
+  notListedSub: { marginTop: 2, color: "#666" },
 });

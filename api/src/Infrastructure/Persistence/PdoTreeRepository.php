@@ -13,11 +13,13 @@ final class PdoTreeRepository implements TreeRepository
     {
         $sql = "
           INSERT INTO trees (
-            species_id, planted_at, planted_by,
+            species_id, custom_species_name,
+            planted_at, planted_by,
             location_lat, location_lng, address_text,
             created_by_user_id
           ) VALUES (
-            :species_id, :planted_at, :planted_by,
+            :species_id, :custom_species_name,
+            :planted_at, :planted_by,
             :location_lat, :location_lng, :address_text,
             :created_by_user_id
           )
@@ -27,6 +29,7 @@ final class PdoTreeRepository implements TreeRepository
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
             ':species_id' => $t['species_id'],
+            ':custom_species_name' => $t['custom_species_name'] ?? null,
             ':planted_at' => $t['planted_at'],
             ':planted_by' => $t['planted_by'],
             ':location_lat' => $t['location_lat'],
