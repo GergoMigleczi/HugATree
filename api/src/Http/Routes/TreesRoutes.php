@@ -170,6 +170,7 @@ final class TreesRoutes
             } catch (\InvalidArgumentException $e) {
                 return Json::ok($res, ['error' => $e->getMessage()], 422);
             } catch (\Throwable $e) {
+                error_log('[POST /trees] ' . $e->getMessage());
                 return Json::ok($res, ['error' => 'Unexpected server error'], 500);
             }
         });
