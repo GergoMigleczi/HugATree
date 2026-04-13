@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,8 +22,12 @@ import { usePinsInBbox } from "@/src/features/trees/hooks/usePinsInBox";
 import ObservationForm from "@/src/features/observations/components/ObservationForm";
 import {
   EMPTY_OBSERVATION_FORM,
+  EMPTY_WILDLIFE_FORM,
+  EMPTY_HEALTH_FORM,
   buildDetailsPayload,
   type ObservationFormData,
+  type WildlifeFormData,
+  type HealthFormData,
 } from "@/src/features/observations/observations.types";
 
 export default function MapRoute() {
@@ -54,19 +58,24 @@ export default function MapRoute() {
 
   // Bottom sheet state
   const sheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ["35%", "100%"], []);
+  const snapPoints = useMemo(() => ["50%", "100%"], []);
 
-  // 0 = closed, 1 = 35%, 2 = 100%
+  // 0 = closed, 1 = 50%, 2 = 100%
   const [sheetStage, setSheetStage] = useState<0 | 1 | 2>(0);
   const sheetIndex = sheetStage === 0 ? -1 : sheetStage === 1 ? 0 : 1;
 
   // Species input state
   const [speciesId, setSpeciesId] = useState<string | null>(null);
+  // Free-text species for species not in the list
+  const [customSpeciesName, setCustomSpeciesName] = useState("");
+  const [showCustomSpecies, setShowCustomSpecies] = useState(false);
 
   // Observation form state for Stage 2
   const [formData, setFormData] = useState<ObservationFormData>(EMPTY_OBSERVATION_FORM);
+  const [wildlifeData, setWildlifeData] = useState<WildlifeFormData>(EMPTY_WILDLIFE_FORM);
+  const [healthData, setHealthData] = useState<HealthFormData>(EMPTY_HEALTH_FORM);
 
-  // Loaction input (picked by tapping on the map when sheet is at stage 1)
+  // Location input (picked by tapping on the map when sheet is at stage 1)
   type LatLng = { latitude: number; longitude: number };
   const [draftLocation, setDraftLocation] = useState<LatLng | null>(null);
   const canPickLocation = sheetStage === 1;
@@ -79,26 +88,49 @@ export default function MapRoute() {
   const speciesState = useSpeciesOptions(sheetStage === 1);
 
   const openAddTree = () => setSheetStage(1);
-  const canGoNext = !!speciesId && !!draftLocation;
+
+  // Stage 1 is complete when location is set AND either a species is selected or a custom name is entered
+  const hasSpecies = !!speciesId || customSpeciesName.trim().length > 0;
+  const canGoNext = hasSpecies && !!draftLocation;
+
   const goNext = () => setSheetStage(2);
   const closeSheet = () => {
     setSheetStage(0);
     setSpeciesId(null);
+    setCustomSpeciesName("");
+    setShowCustomSpecies(false);
     setDraftLocation(null);
     setFormData(EMPTY_OBSERVATION_FORM);
+    setWildlifeData(EMPTY_WILDLIFE_FORM);
+    setHealthData(EMPTY_HEALTH_FORM);
   };
-  
+
   const { withLoading } = useLoading();
 
+  // Validate mandatory stage-2 fields and return an error message, or null if OK
+  function validateStage2(): string | null {
+    if (!formData.details.heightM) return "Height (m) is required — go to the Details tab.";
+    if (!formData.details.trunkDiameterCm) return "Trunk diameter (cm) is required — go to the Details tab.";
+    return null;
+  }
+
   async function handleSaveTree() {
+    const validationError = validateStage2();
+    if (validationError) {
+      Alert.alert("Missing required fields", validationError);
+      return;
+    }
+
     const details = buildDetailsPayload(formData.details);
+
     try {
       await withLoading(
         () => createTree({
           tree: {
             locationLat: draftLocation!.latitude,
             locationLng: draftLocation!.longitude,
-            speciesId: parseInt(speciesId!),
+            ...(speciesId ? { speciesId: parseInt(speciesId) } : {}),
+            ...(customSpeciesName.trim() ? { customSpeciesName: customSpeciesName.trim() } : {}),
           },
           observation: {
             title:      formData.title      || undefined,
@@ -111,6 +143,8 @@ export default function MapRoute() {
       );
       Alert.alert("Tree added", "Your tree has been added successfully.");
       closeSheet();
+      // Refresh map pins to show the newly added tree
+      setSearchViewport(viewport);
     } catch (e: any) {
       Alert.alert("Failed to save tree", e.message ?? "Please try again.");
     } finally {
@@ -152,10 +186,9 @@ export default function MapRoute() {
   }, [viewport, userLocation]);
 
   // Animate the map container height based on the sheet stage.
-  // Skeleton/simple version: closed => 100%, open at 35% => 65%, full => 0% (map hidden)
   const mapAnimatedStyle = useAnimatedStyle(() => {
-    const heightPct = sheetStage === 0 ? 100 : sheetStage === 1 ? 65 : 0;
-    const duration = sheetStage === 1 ? 320 : 50; // a bit slower when going to 35% for a nicer effect
+    const heightPct = sheetStage === 0 ? 100 : sheetStage === 1 ? 50 : 0;
+    const duration = sheetStage === 1 ? 320 : 50;
     return {
       height: withTiming(`${heightPct}%`, { duration: duration }),
     };
@@ -167,7 +200,7 @@ export default function MapRoute() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Map in an animated container so we can “shrink” it */}
+      {/* Map in an animated container so we can "shrink" it */}
       <Animated.View style={[{ width: "100%" }, mapAnimatedStyle]}>
         <MapImpl
           pins={pins ?? []}
@@ -201,7 +234,7 @@ export default function MapRoute() {
             <Text style={styles.backText}>Home</Text>
           </Pressable>
         </SafeAreaView>
-        
+
         {showSearchHere && viewport ? (
           <View style={styles.searchWrap} pointerEvents="box-none">
             <Pressable
@@ -260,9 +293,9 @@ export default function MapRoute() {
       {sheetStage !== 0 ? (
         <BottomSheet
           ref={sheetRef}
-          index={sheetIndex}                // ✅ controlled
+          index={sheetIndex}
           snapPoints={snapPoints}
-          enableDynamicSizing={false}       // ✅ ensures snapPoints are respected (if supported)
+          enableDynamicSizing={false}
           enablePanDownToClose={false}
           enableHandlePanningGesture={false}
           enableContentPanningGesture={false}
@@ -276,15 +309,46 @@ export default function MapRoute() {
             >
                 <Text style={styles.sheetTitle}>Add a Tree</Text>
 
-                <View style={styles.field}>
-                  <SpeciesSelect
-                    valueId={speciesId}
-                    onChange={setSpeciesId}
-                    options={speciesState.status === "success" ? speciesState.data : []}
-                    loading={speciesState.status === "loading"}
-                    error={speciesState.status === "error" ? speciesState.error : null}
-                  />
-                </View>
+                {/* Species selection */}
+                {!showCustomSpecies ? (
+                  <View style={styles.field}>
+                    <SpeciesSelect
+                      valueId={speciesId}
+                      onChange={(id) => {
+                        setSpeciesId(id);
+                        setCustomSpeciesName("");
+                      }}
+                      options={speciesState.status === "success" ? speciesState.data : []}
+                      loading={speciesState.status === "loading"}
+                      error={speciesState.status === "error" ? speciesState.error : null}
+                      onNotListed={() => {
+                        setShowCustomSpecies(true);
+                        setSpeciesId(null);
+                      }}
+                    />
+                  </View>
+                ) : (
+                  <View style={styles.field}>
+                    <Text style={styles.label}>Tree species (custom)</Text>
+                    <TextInput
+                      style={styles.fakeInput}
+                      placeholder="e.g. English Oak"
+                      placeholderTextColor="#666"
+                      value={customSpeciesName}
+                      onChangeText={setCustomSpeciesName}
+                      autoFocus
+                    />
+                    <Pressable
+                      onPress={() => {
+                        setShowCustomSpecies(false);
+                        setCustomSpeciesName("");
+                      }}
+                      style={styles.notListedBtn}
+                    >
+                      <Text style={styles.notListedText}>← Back to species list</Text>
+                    </Pressable>
+                  </View>
+                )}
 
                 <View style={styles.field}>
                   <Text style={styles.label}>Location</Text>
@@ -317,11 +381,19 @@ export default function MapRoute() {
               <View style={styles.stage2Header}>
                 <Text style={styles.sheetTitle}>Initial Observation</Text>
                 <Text style={styles.stage2Sub}>
-                  All fields are optional — you can add more observations later.
+                  Height and trunk diameter are required (* fields).
                 </Text>
               </View>
 
-              <ObservationForm value={formData} onChange={setFormData} isNewTree />
+              <ObservationForm
+                value={formData}
+                onChange={setFormData}
+                wildlifeValue={wildlifeData}
+                onWildlifeChange={setWildlifeData}
+                healthValue={healthData}
+                onHealthChange={setHealthData}
+                isNewTree
+              />
 
               <View style={styles.stage2Footer}>
                 <Pressable onPress={() => setSheetStage(1)} style={styles.secondaryBtn}>
@@ -445,7 +517,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 12,
     backgroundColor: "#fafafa",
+    color: Brand.charcoal,
+    fontSize: 14,
   },
+
+  notListedBtn: { paddingVertical: 4 },
+  notListedText: { fontSize: 12, color: Brand.primary, fontWeight: "600" },
 
   row: { flexDirection: "row", gap: 10, justifyContent: "flex-end" },
 

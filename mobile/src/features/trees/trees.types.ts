@@ -100,7 +100,8 @@ export type CreateTreeInput = {
     tree: {
         locationLat: number;
         locationLng: number;
-        speciesId: number;
+        speciesId?: number;
+        customSpeciesName?: string; // free-text when species is not in the list
         plantedAt?: string; // ISO string, optional
         plantedBy?: string; // optional
         addressText?: string; // optional
