@@ -101,7 +101,7 @@ final class PdoTreeRepository implements TreeRepository
         SELECT
           t.id,
           t.species_id,
-          s.common_name AS species_common_name,
+          COALESCE(s.common_name, t.custom_species_name) AS species_common_name,
           t.location_lat,
           t.location_lng
         FROM trees t
@@ -166,7 +166,7 @@ final class PdoTreeRepository implements TreeRepository
     $sql = "
       SELECT
         t.id,
-        s.common_name AS species_common_name,
+        COALESCE(s.common_name, t.custom_species_name) AS species_common_name,
         t.location_lat,
         t.location_lng,
         t.planted_at,
