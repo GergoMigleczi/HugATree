@@ -179,7 +179,7 @@ export default function ObservationForm({
               />
             </Field>
 
-            <Field label="Height (m)">
+            <Field label="Height (m) *">
               <TextInput
                 style={styles.input}
                 placeholder="e.g. 12.5"
@@ -190,15 +190,15 @@ export default function ObservationForm({
               />
             </Field>
 
-            <Field label="Height method">
+            <Field label="Height method (app or clinometer recommended)">
               <ChipSelect
-                options={["laser", "clinometer", "tape", "visual", "other"]}
+                options={["app", "clinometer", "laser", "tape", "visual", "other"]}
                 value={value.details.heightMethod}
                 onChange={(v) => setDetailField("heightMethod", v)}
               />
             </Field>
 
-            <Field label="Trunk diameter (cm)">
+            <Field label="Trunk diameter (cm) *">
               <TextInput
                 style={styles.input}
                 placeholder="e.g. 45"
