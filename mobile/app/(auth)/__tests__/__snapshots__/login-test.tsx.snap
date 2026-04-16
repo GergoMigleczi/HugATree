@@ -1,0 +1,588 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<LoginScreen /> [AC-12] matches snapshot 1`] = `
+<View
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      {
+        "backgroundColor": "#F4FAF6",
+      },
+    ]
+  }
+>
+  <View
+    onLayout={[Function]}
+    style={
+      [
+        {
+          "flex": 1,
+        },
+        {
+          "paddingBottom": 0,
+        },
+      ]
+    }
+  >
+    <RCTScrollView
+      contentContainerStyle={
+        {
+          "flexGrow": 1,
+          "justifyContent": "center",
+          "paddingHorizontal": 20,
+          "paddingVertical": 24,
+        }
+      }
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      <View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "marginBottom": 24,
+            }
+          }
+        >
+          <Image
+            resizeMode="contain"
+            source={
+              {
+                "testUri": "../../../assets/images/logo.png",
+              }
+            }
+            style={
+              {
+                "height": 160,
+                "marginBottom": 8,
+                "width": 160,
+              }
+            }
+          />
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 14,
+                  "textAlign": "center",
+                },
+                {
+                  "color": "#4A5E54",
+                },
+              ]
+            }
+          >
+            Track, protect & celebrate trees
+          </Text>
+        </View>
+        <View
+          style={
+            [
+              {
+                "borderRadius": 20,
+                "borderWidth": 1,
+                "elevation": 4,
+                "gap": 16,
+                "padding": 24,
+                "shadowColor": "#000",
+                "shadowOffset": {
+                  "height": 2,
+                  "width": 0,
+                },
+                "shadowOpacity": 0.08,
+                "shadowRadius": 12,
+              },
+              {
+                "backgroundColor": "#FFFFFF",
+                "borderColor": "#B7E4C7",
+              },
+            ]
+          }
+        >
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 22,
+                  "fontWeight": "700",
+                },
+                {
+                  "color": "#1C2721",
+                },
+              ]
+            }
+          >
+            Welcome back
+          </Text>
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 14,
+                  "marginTop": -8,
+                },
+                {
+                  "color": "#4A5E54",
+                },
+              ]
+            }
+          >
+            Sign in to your account
+          </Text>
+          <View
+            style={
+              {
+                "gap": 6,
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 13,
+                    "fontWeight": "600",
+                  },
+                  {
+                    "color": "#4A5E54",
+                  },
+                ]
+              }
+            >
+              Email
+            </Text>
+            <View
+              style={
+                [
+                  {
+                    "alignItems": "center",
+                    "borderRadius": 12,
+                    "borderWidth": 1.5,
+                    "flexDirection": "row",
+                    "height": 52,
+                    "paddingHorizontal": 12,
+                  },
+                  {
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#B7E4C7",
+                  },
+                ]
+              }
+            >
+              <Text
+                allowFontScaling={false}
+                selectable={false}
+                style={
+                  [
+                    {
+                      "color": "#4A5E54",
+                      "fontSize": 18,
+                    },
+                    {
+                      "marginRight": 8,
+                    },
+                    {
+                      "fontFamily": "ionicons",
+                      "fontStyle": "normal",
+                      "fontWeight": "normal",
+                    },
+                    {},
+                  ]
+                }
+              >
+                
+              </Text>
+              <TextInput
+                autoCapitalize="none"
+                keyboardType="email-address"
+                onChangeText={[Function]}
+                placeholder="you@example.com"
+                placeholderTextColor="#4A5E54"
+                returnKeyType="next"
+                style={
+                  [
+                    {
+                      "flex": 1,
+                      "fontSize": 15,
+                      "height": "100%",
+                    },
+                    {
+                      "color": "#1C2721",
+                    },
+                  ]
+                }
+                value=""
+              />
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "gap": 6,
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 13,
+                    "fontWeight": "600",
+                  },
+                  {
+                    "color": "#4A5E54",
+                  },
+                ]
+              }
+            >
+              Password
+            </Text>
+            <View
+              style={
+                [
+                  {
+                    "alignItems": "center",
+                    "borderRadius": 12,
+                    "borderWidth": 1.5,
+                    "flexDirection": "row",
+                    "height": 52,
+                    "paddingHorizontal": 12,
+                  },
+                  {
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#B7E4C7",
+                  },
+                ]
+              }
+            >
+              <Text
+                allowFontScaling={false}
+                selectable={false}
+                style={
+                  [
+                    {
+                      "color": "#4A5E54",
+                      "fontSize": 18,
+                    },
+                    {
+                      "marginRight": 8,
+                    },
+                    {
+                      "fontFamily": "ionicons",
+                      "fontStyle": "normal",
+                      "fontWeight": "normal",
+                    },
+                    {},
+                  ]
+                }
+              >
+                
+              </Text>
+              <TextInput
+                onChangeText={[Function]}
+                onSubmitEditing={[Function]}
+                placeholder="At least 8 characters"
+                placeholderTextColor="#4A5E54"
+                returnKeyType="done"
+                secureTextEntry={true}
+                style={
+                  [
+                    {
+                      "flex": 1,
+                      "fontSize": 15,
+                      "height": "100%",
+                    },
+                    {
+                      "color": "#1C2721",
+                    },
+                  ]
+                }
+                value=""
+              />
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={true}
+                hitSlop={8}
+                onBlur={[Function]}
+                onClick={[Function]}
+                onFocus={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "padding": 4,
+                  }
+                }
+                testID="toggle-password"
+              >
+                <Text
+                  allowFontScaling={false}
+                  selectable={false}
+                  style={
+                    [
+                      {
+                        "color": "#4A5E54",
+                        "fontSize": 18,
+                      },
+                      undefined,
+                      {
+                        "fontFamily": "ionicons",
+                        "fontStyle": "normal",
+                        "fontWeight": "normal",
+                      },
+                      {},
+                    ]
+                  }
+                >
+                  
+                </Text>
+              </View>
+            </View>
+          </View>
+          <View
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": false,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 12,
+                  "height": 52,
+                  "justifyContent": "center",
+                },
+                {
+                  "backgroundColor": "#40916C",
+                  "opacity": 1,
+                },
+              ]
+            }
+          >
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "gap": 8,
+                }
+              }
+            >
+              <Text
+                allowFontScaling={false}
+                selectable={false}
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontSize": 18,
+                    },
+                    undefined,
+                    {
+                      "fontFamily": "ionicons",
+                      "fontStyle": "normal",
+                      "fontWeight": "normal",
+                    },
+                    {},
+                  ]
+                }
+              >
+                
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#FFFFFF",
+                    "fontSize": 16,
+                    "fontWeight": "700",
+                  }
+                }
+              >
+                Sign in
+              </Text>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "flexDirection": "row",
+                "gap": 10,
+              }
+            }
+          >
+            <View
+              style={
+                [
+                  {
+                    "flex": 1,
+                    "height": 1,
+                  },
+                  {
+                    "backgroundColor": "#B7E4C7",
+                  },
+                ]
+              }
+            />
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 12,
+                  },
+                  {
+                    "color": "#4A5E54",
+                  },
+                ]
+              }
+            >
+              or
+            </Text>
+            <View
+              style={
+                [
+                  {
+                    "flex": 1,
+                    "height": 1,
+                  },
+                  {
+                    "backgroundColor": "#B7E4C7",
+                  },
+                ]
+              }
+            />
+          </View>
+          <View
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 12,
+                  "borderWidth": 1.5,
+                  "height": 52,
+                  "justifyContent": "center",
+                },
+                {
+                  "borderColor": "#40916C",
+                  "opacity": 1,
+                },
+              ]
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 15,
+                    "fontWeight": "600",
+                  },
+                  {
+                    "color": "#40916C",
+                  },
+                ]
+              }
+            >
+              Create an account
+            </Text>
+          </View>
+        </View>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 13,
+                "marginTop": 24,
+                "textAlign": "center",
+              },
+              {
+                "color": "#4A5E54",
+              },
+            ]
+          }
+        >
+          Every tree counts 🌳
+        </Text>
+      </View>
+    </RCTScrollView>
+  </View>
+</View>
+`;
