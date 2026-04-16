@@ -144,7 +144,7 @@ export default function LoginScreen() {
                   returnKeyType="done"
                   onSubmitEditing={handleLogin}
                 />
-                <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={8} style={styles.eyeBtn}>
+                <Pressable testID="toggle-password" onPress={() => setShowPassword((v) => !v)} hitSlop={8} style={styles.eyeBtn}>
                   <Ionicons
                     name={showPassword ? "eye-off-outline" : "eye-outline"}
                     size={18}

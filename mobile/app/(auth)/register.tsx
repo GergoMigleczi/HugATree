@@ -158,7 +158,7 @@ export default function RegisterScreen() {
                   returnKeyType="done"
                   onSubmitEditing={handleRegister}
                 />
-                <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={8} style={styles.eyeBtn}>
+                <Pressable testID="toggle-password" onPress={() => setShowPassword((v) => !v)} hitSlop={8} style={styles.eyeBtn}>
                   <Ionicons
                     name={showPassword ? "eye-off-outline" : "eye-outline"}
                     size={18}
@@ -175,6 +175,7 @@ export default function RegisterScreen() {
 
             {/* Primary create button */}
             <Pressable
+              testID="submit-register"
               onPress={handleRegister}
               disabled={submitting}
               style={({ pressed }) => [
