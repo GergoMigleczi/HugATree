@@ -139,8 +139,10 @@ export default function MapRoute() {
         try {
           const storageKey = await uploadPhotoApi(formData.photoUri);
           photoKeys = [storageKey];
-        } catch {
-          Alert.alert("Photo upload failed", "Please try again or save without a photo.");
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.error("Photo upload error:", msg);
+          Alert.alert("Photo upload failed", msg || "Please try again or save without a photo.");
           return;
         }
       }
