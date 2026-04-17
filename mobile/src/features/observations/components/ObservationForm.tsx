@@ -17,8 +17,8 @@ import type {
 } from "../observations.types";
 import { EMPTY_DETAILS, EMPTY_HEALTH_ISSUE } from "../observations.types";
 import TabBar, { type TabDef } from "@/src/ui/TabBar";
-import EmptyState from "@/src/ui/EmptyState";
 import ChipSelect from "@/src/ui/ChipSelect";
+import PhotoPicker from "./PhotoPicker";
 import SpeciesSelect from "@/src/features/trees/components/SpeciesSelect";
 import { useWildlifeSpeciesOptions } from "../hooks/useWildlifeSpeciesOptions";
 
@@ -26,27 +26,34 @@ import { useWildlifeSpeciesOptions } from "../hooks/useWildlifeSpeciesOptions";
 
 type TabId = "note" | "details" | "photos" | "wildlife" | "health";
 
-const TABS: TabDef<TabId>[] = [
+const ALL_TABS: TabDef<TabId>[] = [
   { id: "note",     label: "Note",     icon: "document-text-outline"          },
   { id: "details",  label: "Details",  icon: "resize-outline"                 },
-  { id: "photos",   label: "Photos",   icon: "camera-outline",   stub: true   },
+  { id: "photos",   label: "Photos",   icon: "camera-outline"                 },
   { id: "wildlife", label: "Wildlife", icon: "leaf-outline"                   },
   { id: "health",   label: "Health",   icon: "heart-outline"                  },
 ];
+
+const NEW_TREE_TABS: TabDef<TabId>[] = ALL_TABS.filter(
+  (t) => t.id !== "wildlife" && t.id !== "health"
+);
 
 /* ─── Props ────────────────────────────────────────────────────────────────── */
 
 type Props = {
   value: ObservationFormData;
   onChange: (next: ObservationFormData) => void;
-  wildlifeValue: WildlifeFormData;
-  onWildlifeChange: (next: WildlifeFormData) => void;
-  healthValue: HealthFormData;
-  onHealthChange: (next: HealthFormData) => void;
+  wildlifeValue?: WildlifeFormData;
+  onWildlifeChange?: (next: WildlifeFormData) => void;
+  healthValue?: HealthFormData;
+  onHealthChange?: (next: HealthFormData) => void;
   /** Shows an amber notice that this is the first (initial) observation */
   isNewTree?: boolean;
   /** Which sub-tab to open first */
   initialTab?: TabId;
+  /** Renders content in a plain View instead of ScrollView — use when
+   *  the parent (e.g. BottomSheetScrollView) owns scrolling */
+  noScroll?: boolean;
 };
 
 /* ─── Component ────────────────────────────────────────────────────────────── */
@@ -60,7 +67,9 @@ export default function ObservationForm({
   onHealthChange,
   isNewTree,
   initialTab,
+  noScroll = false,
 }: Props) {
+  const tabs = isNewTree ? NEW_TREE_TABS : ALL_TABS;
   const [activeTab, setActiveTab] = useState<TabId>(initialTab ?? "note");
 
   // Wildlife species — loaded lazily when the wildlife tab is first opened
@@ -84,32 +93,36 @@ export default function ObservationForm({
     key: K,
     val: string
   ) {
+    if (!wildlifeValue || !onWildlifeChange) return;
     onWildlifeChange({ ...wildlifeValue, [key]: val });
   }
 
   function updateHealthIssue(idx: number, patch: Partial<typeof EMPTY_HEALTH_ISSUE>) {
+    if (!healthValue || !onHealthChange) return;
     const next = [...healthValue.issues];
     next[idx] = { ...next[idx], ...patch };
     onHealthChange({ ...healthValue, issues: next });
   }
 
   function removeHealthIssue(idx: number) {
+    if (!healthValue || !onHealthChange) return;
     const next = [...healthValue.issues];
     next.splice(idx, 1);
     onHealthChange({ ...healthValue, issues: next });
   }
 
+  const ScrollContainer = noScroll ? View : ScrollView;
+  const scrollProps = noScroll
+    ? { style: styles.scrollContent }
+    : { style: styles.scroll, contentContainerStyle: styles.scrollContent, keyboardShouldPersistTaps: "handled" as const };
+
   return (
     <View style={styles.container}>
       {/* Tab bar */}
-      <TabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+      <TabBar tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       {/* Tab content */}
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollContainer {...scrollProps}>
         {/* ── Note tab ── */}
         {activeTab === "note" && (
           <>
@@ -380,15 +393,14 @@ export default function ObservationForm({
           </>
         )}
 
-        {/* ── Stub tab (photos only) ── */}
-        {TABS.find((t) => t.id === activeTab)?.stub && (
-          <EmptyState
-            icon="construct-outline"
-            title="Coming soon"
-            subtitle="Photo upload will be available in a future update."
+        {/* ── Photos tab ── */}
+        {activeTab === "photos" && (
+          <PhotoPicker
+            value={value.photoUri}
+            onChange={(uri) => setField("photoUri", uri)}
           />
         )}
-      </ScrollView>
+      </ScrollContainer>
     </View>
   );
 }

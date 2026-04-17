@@ -53,6 +53,7 @@ export default function MapImpl({
 }: Props) {
   const mapRef = useRef<any>(null);
 
+  const [mapReady, setMapReady] = useState(false);
   const [followUser, setFollowUser] = useState(true);
   const hasInitiallyCentered = useRef(false);
   const prevRecenterToken = useRef(recenterToken);
@@ -152,6 +153,7 @@ export default function MapImpl({
 
           onMapPress?.({ latitude: coord.latitude, longitude: coord.longitude });
         }}
+        onMapReady={() => setMapReady(true)}
         onRegionChangeComplete={(r: any) => {
           const region: MapRegion = {
             latitude: r.latitude,
@@ -164,7 +166,7 @@ export default function MapImpl({
         }}
       >
         {/* Draft marker (user-picked location) */}
-        {canRenderDraft ? (
+        {mapReady && canRenderDraft ? (
           <Marker
             key="draft"
             identifier="draft-location"
@@ -172,7 +174,7 @@ export default function MapImpl({
           />
         ) : null}
 
-        {safePins.map((p) => (
+        {mapReady && safePins.map((p) => (
           <Marker
             key={String(p.id)}
             identifier={`pin-${p.id}`}

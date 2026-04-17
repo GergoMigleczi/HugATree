@@ -31,6 +31,9 @@ services:
       JWT_ISSUER: hugatree
       ACCESS_TTL_MINUTES: 1
       REFRESH_TTL_DAYS: 30
+      UPLOADS_PATH: /var/uploads
+    volumes:
+      - uploads_data:/var/uploads
     ports:
       - "8000:8000"
     depends_on:
@@ -39,3 +42,4 @@ services:
 
 volumes:
   db_data:
+  uploads_data:

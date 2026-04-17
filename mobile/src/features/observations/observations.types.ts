@@ -21,6 +21,7 @@ export type ObservationFormData = {
   noteText: string;
   observedAt: string;
   details: TreeDetailsFormData;
+  photoUri: string | null; // local device URI before upload, null if none selected
 };
 
 export type WildlifeFormData = {
@@ -65,6 +66,7 @@ export const EMPTY_OBSERVATION_FORM: ObservationFormData = {
   noteText: "",
   observedAt: "",
   details: EMPTY_DETAILS,
+  photoUri: null,
 };
 
 export const EMPTY_WILDLIFE_FORM: WildlifeFormData = {

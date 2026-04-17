@@ -1,5 +1,5 @@
-import React from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Brand } from "@/constants/theme";
 import type { ObservationItem } from "../observations.types";
@@ -7,9 +7,14 @@ import type { ObservationItem } from "../observations.types";
 type Props = {
   item: ObservationItem;
   isInitial: boolean;
+  /** Called with the photo URL when the thumbnail is tapped. */
+  onPhotoPress?: (uri: string) => void;
 };
 
-export default function ObservationCard({ item, isInitial }: Props) {
+export default function ObservationCard({ item, isInitial, onPhotoPress }: Props) {
+  const [imgLoading, setImgLoading] = useState(false);
+  const [imgError,   setImgError]   = useState(false);
+
   const dateLabel = item.observedAt ?? item.createdAt;
   const formattedDate = dateLabel
     ? new Date(dateLabel).toLocaleDateString(undefined, {
@@ -22,13 +27,32 @@ export default function ObservationCard({ item, isInitial }: Props) {
   return (
     <View style={styles.card}>
       {/* Photo thumbnail or placeholder */}
-      <View style={styles.thumb}>
-        {item.photoKey ? (
-          <Image source={{ uri: item.photoKey }} style={styles.thumbImage} />
+      <Pressable
+        style={styles.thumb}
+        onPress={item.photoKey && onPhotoPress ? () => onPhotoPress(item.photoKey!) : undefined}
+        disabled={!item.photoKey || !onPhotoPress}
+      >
+        {item.photoKey && !imgError ? (
+          <>
+            <Image
+              source={{ uri: item.photoKey }}
+              style={styles.thumbImage}
+              onLoadStart={() => setImgLoading(true)}
+              onLoadEnd={()   => setImgLoading(false)}
+              onError={()     => { setImgLoading(false); setImgError(true); }}
+            />
+            {imgLoading && (
+              <ActivityIndicator
+                size="small"
+                color={Brand.primary}
+                style={StyleSheet.absoluteFillObject}
+              />
+            )}
+          </>
         ) : (
           <Ionicons name="image-outline" size={22} color={Brand.softGray} />
         )}
-      </View>
+      </Pressable>
 
       {/* Content */}
       <View style={styles.body}>

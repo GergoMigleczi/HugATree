@@ -7,7 +7,8 @@ import type { ObservationFormData, CreateObservationResponseApi } from "../obser
  */
 export async function createObservation(
   treeId: number,
-  form: ObservationFormData
+  form: ObservationFormData,
+  photoKeys: string[] = [],
 ): Promise<CreateObservationResponseApi> {
-  return createObservationApi(treeId, form);
+  return createObservationApi(treeId, form, photoKeys);
 }
