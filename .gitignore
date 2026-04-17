@@ -17,3 +17,6 @@ api/node_modules/
 
 # Editor
 .vscode/
+
+# test coverage
+mobile/coverage/
