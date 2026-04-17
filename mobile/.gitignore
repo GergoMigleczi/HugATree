@@ -39,6 +39,9 @@ yarn-error.*
 # test coverage
 coverage/
 
+# test coverage
+coverage/
+
 app-example
 
 # generated native folders
