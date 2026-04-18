@@ -194,9 +194,27 @@ This installs 4 core PHP dependencies from `composer.json` locally.
 | eslint | ^9.25.0 | Code linting tool |
 | eslint-config-expo | ~10.0.0 | ESLint configuration for Expo projects |
 
+### Testing Dependencies
+
+These must be installed separately before running tests. From the `mobile/` directory:
+
+```bash
+npm install --save-dev jest jest-expo @types/jest @testing-library/react-native --legacy-peer-deps
+```
+
+| Library | Version | Purpose |
+|---------|---------|---------|
+| jest | ~29.7.0 | Test runner and assertion framework |
+| jest-expo | ~54.0.17 | Jest preset that handles all Expo/React Native configuration and native module mocking |
+| @testing-library/react-native | ^13.3.3 | Renders components and provides user-facing queries for testing UI |
+| @types/jest | ^29.5.14 | TypeScript type definitions for Jest |
+
+> **Note:** The `--legacy-peer-deps` flag is required due to a peer dependency conflict between `@testing-library/react-native` and React 19.
+
 ## Summary
 
 - **Backend**: 4 core dependencies (Slim framework, JWT, environment config)
 - **Frontend**: 31 production dependencies + 4 development dependencies (Expo-based React Native)
+- **Testing**: 4 additional dev dependencies — install separately, see the [Mobile Testing Guide](mobile/testing.md) for full setup and usage
 
 The project uses a modern microservices-like architecture with a PHP REST API backend and a React Native Expo app for cross-platform mobile development.
