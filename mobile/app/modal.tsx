@@ -2,13 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -169,6 +169,19 @@ export default function TreeModalScreen() {
   /* ── Save ───────────────────────────────────────────────────────────────── */
   async function handleSave() {
     if (!numericTreeId) return;
+
+    // Validate required fields
+    if (tab !== "wildlife" && tab !== "health") {
+      if (!formData.title.trim()) {
+        Alert.alert("Missing required fields", "Title is required — go to the Note tab.");
+        return;
+      }
+    }
+    if (tab === "details" && !formData.details.canopyDiameterM) {
+      Alert.alert("Missing required fields", "Canopy diameter (m) is required — go to the Details tab.");
+      return;
+    }
+
     try {
       // Upload photo first if one was selected — same pattern as map.tsx
       let photoKeys: string[] = [];
@@ -391,7 +404,7 @@ export default function TreeModalScreen() {
               {/* Hero photo — first observation photo, overview tab only */}
               {tab === "overview" && heroPhotoUri && (
                 <Pressable onPress={() => setViewingPhoto(heroPhotoUri)} style={styles.heroWrap}>
-                  <Image source={{ uri: heroPhotoUri }} style={styles.heroImage} resizeMode="cover" />
+                  <Image source={{ uri: heroPhotoUri }} style={styles.heroImage} contentFit="cover" />
                   <View style={styles.heroOverlay}>
                     <Ionicons name="expand-outline" size={18} color="#fff" />
                   </View>
@@ -563,7 +576,7 @@ const styles = StyleSheet.create({
   cancelBtn:     { paddingHorizontal: 12, paddingVertical: 8 },
   cancelBtnText: { fontSize: 13, fontWeight: "600", color: Brand.midGray },
 
-  listContent: { padding: 16, gap: 10, paddingBottom: 32 },
+  listContent: { padding: 16, gap: 10, paddingBottom: 48 },
 
   heroWrap: {
     borderRadius: 12,
@@ -593,6 +606,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Brand.pale,
     overflow: "hidden",
+    marginTop: 8,
+    marginBottom: 16,
   },
   detailRow: {
     flexDirection: "row",
