@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { Brand } from "@/constants/theme";
 import type { ObservationItem } from "../observations.types";
@@ -37,6 +38,7 @@ export default function ObservationCard({ item, isInitial, onPhotoPress }: Props
             <Image
               source={{ uri: item.photoKey }}
               style={styles.thumbImage}
+              contentFit="cover"
               onLoadStart={() => setImgLoading(true)}
               onLoadEnd={()   => setImgLoading(false)}
               onError={()     => { setImgLoading(false); setImgError(true); }}

@@ -135,7 +135,7 @@ export default function ObservationForm({
               </View>
             )}
 
-            <Field label="Title (optional)">
+            <Field label="Title *">
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Healthy oak near the path"
@@ -155,16 +155,6 @@ export default function ObservationForm({
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
-              />
-            </Field>
-
-            <Field label="Observed on (optional)">
-              <TextInput
-                style={styles.input}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={Brand.softGray}
-                value={value.observedAt}
-                onChangeText={(t) => setField("observedAt", t)}
               />
             </Field>
           </>
@@ -241,7 +231,7 @@ export default function ObservationForm({
               />
             </Field>
 
-            <Field label="Canopy diameter (m)">
+            <Field label="Canopy diameter (m) *">
               <TextInput
                 style={styles.input}
                 placeholder="e.g. 8"

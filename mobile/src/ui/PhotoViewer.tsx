@@ -63,7 +63,6 @@ export default function PhotoViewer({ uri, onClose }: Props) {
           centerContent
         >
           <Image
-            key={uri}                  // remounts on every new photo → clears cache state
             source={{ uri: uri ?? "" }}
             style={{ width, height }}
             contentFit="contain"

@@ -118,8 +118,10 @@ export default function MapRoute() {
 
   // Validate mandatory stage-2 fields and return an error message, or null if OK
   function validateStage2(): string | null {
+    if (!formData.title.trim()) return "Title is required — go to the Note tab.";
     if (!formData.details.heightM) return "Height (m) is required — go to the Details tab.";
     if (!formData.details.trunkDiameterCm) return "Trunk diameter (cm) is required — go to the Details tab.";
+    if (!formData.details.canopyDiameterM) return "Canopy diameter (m) is required — go to the Details tab.";
     return null;
   }
 
@@ -448,7 +450,7 @@ export default function MapRoute() {
                 <View style={styles.stage2Header}>
                   <Text style={styles.sheetTitle}>Initial Observation</Text>
                   <Text style={styles.stage2Sub}>
-                    Height and trunk diameter are required (* fields).
+                    Title, height, trunk diameter and canopy diameter are required (* fields).
                   </Text>
                 </View>
 
@@ -566,7 +568,7 @@ const styles = StyleSheet.create({
 
   sheetContent: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 16,
     paddingBottom: 24,
     gap: 14,
   },

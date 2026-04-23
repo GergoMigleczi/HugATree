@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { StyleSheet, View , Text} from "react-native";
+import { StyleSheet, View, Text } from "react-native";
 import ClusteredMapViewIOS from "react-native-map-clustering";
 import { Callout, Marker } from "react-native-maps";
 import type { Bbox, MapRegion, MapLayer } from "../map.types";
@@ -180,8 +180,7 @@ export default function MapImpl({
             identifier={`pin-${p.id}`}
             coordinate={{ latitude: p.latitude, longitude: p.longitude }}
           >
-            <Callout tooltip={false}
-              onPress={() => onPinPress(p)}>
+            <Callout tooltip={false} onPress={() => onPinPress(p)}>
               <View style={{ padding: 4 }}>
                 <Text style={{ fontWeight: "600" }}>
                   {p.speciesCommonName ?? "Unknown species"}
