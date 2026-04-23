@@ -34,7 +34,7 @@ export default function RootLayout() {
               {/* Existing modal */}
               <Stack.Screen
                 name="modal"
-                options={{ presentation: "modal", title: "Modal" }}
+                options={{ presentation: "modal", headerShown: false }}
               />
             </Stack>
           </LoadingProvider>
