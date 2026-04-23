@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -84,6 +84,7 @@ function healthToCard(h: HealthItem): ObservationItem {
 export default function TreeModalScreen() {
   const { treeId } = useLocalSearchParams<{ treeId: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { withLoading } = useLoading();
 
   const numericTreeId = treeId ? parseInt(treeId, 10) : null;
@@ -322,7 +323,7 @@ export default function TreeModalScreen() {
 
       {/* Header */}
       <SafeAreaView edges={["top"]} style={styles.headerSafe}>
-        <View style={styles.headerRow}>
+        <View style={[styles.headerRow, { paddingTop: insets.top + 12 }]}>
           <Pressable onPress={() => router.back()} style={styles.closeBtn} hitSlop={8}>
             <Ionicons name="close" size={20} color={Brand.charcoal} />
           </Pressable>
@@ -494,7 +495,7 @@ export default function TreeModalScreen() {
             initialTab={formInitialTab()}
           />
 
-          <View style={styles.formFooter}>
+          <View style={[styles.formFooter, { paddingBottom: insets.bottom + 16 }]}>
             <Pressable onPress={cancelAdd} style={styles.secondaryBtn}>
               <Text style={styles.secondaryBtnText}>Cancel</Text>
             </Pressable>
@@ -663,7 +664,8 @@ const styles = StyleSheet.create({
   formFooter: {
     flexDirection: "row",
     gap: 10,
-    padding: 16,
+    paddingTop: 16,
+    paddingHorizontal: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Brand.pale,
     backgroundColor: Brand.white,
