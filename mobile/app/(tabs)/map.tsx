@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -33,6 +33,7 @@ import { uploadPhotoApi } from "@/src/features/observations/observations.api";
 
 export default function MapRoute() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [error, setError] = useState<string | null>(null);
   const [recenterToken, setRecenterToken] = useState(0);
@@ -333,7 +334,7 @@ export default function MapRoute() {
         >
           {sheetStage === 1 && (
             <BottomSheetScrollView
-              contentContainerStyle={styles.sheetContent}
+              contentContainerStyle={[styles.sheetContent, { paddingTop: insets.top + 16 }]}
               keyboardShouldPersistTaps="handled"
             >
                 <Text style={styles.sheetTitle}>Add a Tree</Text>
@@ -447,7 +448,7 @@ export default function MapRoute() {
                 contentContainerStyle={styles.stage2ScrollContent}
                 keyboardShouldPersistTaps="handled"
               >
-                <View style={styles.stage2Header}>
+                <View style={[styles.stage2Header, { paddingTop: (insets.top > 0 ? insets.top : 0) + 16 }]}>
                   <Text style={styles.sheetTitle}>Initial Observation</Text>
                   <Text style={styles.stage2Sub}>
                     Title, height, trunk diameter and canopy diameter are required (* fields).
@@ -568,7 +569,6 @@ const styles = StyleSheet.create({
 
   sheetContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
     paddingBottom: 24,
     gap: 14,
   },
@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
 
   stage2Container: { flex: 1 },
   stage2ScrollContent: { paddingBottom: 16 },
-  stage2Header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
+  stage2Header: { paddingHorizontal: 16, paddingBottom: 12 },
   stage2Sub: { fontSize: 12, color: Brand.midGray, marginTop: 2 },
   stage2Footer: {
     flexDirection: "row",
