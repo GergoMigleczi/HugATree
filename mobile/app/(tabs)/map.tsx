@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -74,6 +75,8 @@ export default function MapRoute() {
   // Tree-level optional fields (stage 1)
   const [plantedBy, setPlantedBy] = useState("");
   const [plantedAt, setPlantedAt] = useState("");
+  const [plantedAtDate, setPlantedAtDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [addressText, setAddressText] = useState("");
 
   // Observation form state for Stage 2
@@ -108,6 +111,8 @@ export default function MapRoute() {
     setDraftLocation(null);
     setPlantedBy("");
     setPlantedAt("");
+    setPlantedAtDate(null);
+    setShowDatePicker(false);
     setAddressText("");
     setFormData(EMPTY_OBSERVATION_FORM);
     setWildlifeData(EMPTY_WILDLIFE_FORM);
@@ -403,14 +408,30 @@ export default function MapRoute() {
 
                 <View style={styles.field}>
                   <Text style={styles.label}>Date planted</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={plantedAt}
-                    onChangeText={setPlantedAt}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor="#999"
-                    keyboardType="numbers-and-punctuation"
-                  />
+                  <Pressable
+                    style={styles.fakeInput}
+                    onPress={() => setShowDatePicker((v) => !v)}
+                  >
+                    <Text style={{ color: plantedAt ? Brand.charcoal : "#999", fontSize: 14 }}>
+                      {plantedAt || "Select a date"}
+                    </Text>
+                  </Pressable>
+                  {showDatePicker && (
+                    <DateTimePicker
+                      mode="date"
+                      display="spinner"
+                      value={plantedAtDate ?? new Date()}
+                      maximumDate={new Date()}
+                      onChange={(_event, date) => {
+                        if (date) {
+                          setPlantedAtDate(date);
+                          const iso = date.toISOString().slice(0, 10);
+                          setPlantedAt(iso);
+                        }
+                        setShowDatePicker(false);
+                      }}
+                    />
+                  )}
                 </View>
 
                 <View style={styles.field}>
