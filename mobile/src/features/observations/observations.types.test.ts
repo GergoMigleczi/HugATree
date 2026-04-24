@@ -1,5 +1,28 @@
-import { buildDetailsPayload, EMPTY_DETAILS } from "./observations.types";
+import { buildDetailsPayload, normaliseApiDate, EMPTY_DETAILS } from "./observations.types";
 import type { TreeDetailsFormData } from "./observations.types";
+
+describe("normaliseApiDate", () => {
+  it("replaces the space separator with T", () => {
+    expect(normaliseApiDate("2024-01-15 10:30:00+00:00")).toBe("2024-01-15T10:30:00+00:00");
+  });
+
+  it("expands a bare two-digit UTC offset to hh:mm format", () => {
+    expect(normaliseApiDate("2024-01-15 10:30:00+00")).toBe("2024-01-15T10:30:00+00:00");
+  });
+
+  it("handles non-zero UTC offsets", () => {
+    expect(normaliseApiDate("2024-06-01 08:00:00+05")).toBe("2024-06-01T08:00:00+05:00");
+  });
+
+  it("leaves an already-valid ISO string unchanged", () => {
+    expect(normaliseApiDate("2024-01-15T10:30:00+00:00")).toBe("2024-01-15T10:30:00+00:00");
+  });
+
+  it("produces a valid Date when parsed", () => {
+    const result = normaliseApiDate("2024-03-20 14:00:00+00");
+    expect(new Date(result).toISOString()).toBe("2024-03-20T14:00:00.000Z");
+  });
+});
 
 describe("buildDetailsPayload", () => {
   it("returns undefined when all fields are empty strings", () => {

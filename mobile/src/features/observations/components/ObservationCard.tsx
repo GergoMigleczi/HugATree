@@ -4,6 +4,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { Brand } from "@/constants/theme";
 import type { ObservationItem } from "../observations.types";
+import { normaliseApiDate } from "../observations.types";
 
 type Props = {
   item: ObservationItem;
@@ -18,7 +19,7 @@ export default function ObservationCard({ item, isInitial, onPhotoPress }: Props
 
   const dateLabel = item.observedAt ?? item.createdAt;
   const formattedDate = dateLabel
-    ? new Date(dateLabel.replace(" ", "T").replace(/\+(\d{2})$/, "+$1:00")).toLocaleDateString(undefined, {
+    ? new Date(normaliseApiDate(dateLabel)).toLocaleDateString(undefined, {
         day: "numeric",
         month: "short",
         year: "numeric",
