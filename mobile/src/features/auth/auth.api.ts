@@ -7,13 +7,15 @@ export async function registerApi(params: {
   email: string;
   password: string;
   displayName: string;
-}) {
+  userRole?: string;
+})  {
   return apiRequest<RegisterResponse>("/auth/register", {
     method: "POST",
     body: {
       email: params.email,
       password: params.password,
       display_name: params.displayName,
+
     },
   });
 }

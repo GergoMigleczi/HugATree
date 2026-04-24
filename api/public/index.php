@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use App\Http\Json;
 use App\Http\Routes\AuthRoutes;
+use App\Http\Routes\AdminRoutes;
 use App\Http\Routes\MeRoutes;
 use App\Http\Routes\PhotoRoutes;
 use App\Http\Routes\TreesRoutes;
@@ -29,6 +30,7 @@ use App\Application\Service\TreeMetricsCalculator;
 use App\Application\Service\WeatherSummaryService;
 
 use App\Application\UseCase\GetMe;
+use App\Application\UseCase\GetUser;
 use App\Application\UseCase\LoginUser;
 use App\Application\UseCase\UploadPhoto;
 use App\Application\UseCase\LogoutSession;
@@ -46,6 +48,10 @@ use App\Application\UseCase\GetTreeWildlife;
 use App\Application\UseCase\CreateWildlife;
 use App\Application\UseCase\GetTreeHealth;
 use App\Application\UseCase\CreateHealth;
+use App\Application\UseCase\SetTreeApprovalStatus;
+use App\Application\UseCase\SetUserRole;
+use App\Application\UseCase\DeactivateUser;
+use App\Application\UseCase\AssignTreeGuardian;
 
 use Dotenv\Dotenv;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -55,7 +61,7 @@ use Slim\Psr7\Response;
 require_once __DIR__ . '/../vendor/autoload.php';
 
 $dotenv = Dotenv::createImmutable(__DIR__ . "/..");
-$dotenv->load();
+$dotenv->safeLoad();
 
 $app = AppFactory::create();
 
@@ -123,12 +129,19 @@ $loginUser = new LoginUser($userRepo, $sessionRepo, $passwordHasher, $tokenServi
 $refreshSession = new RefreshSession($sessionRepo, $tokenService);
 $logoutSession = new LogoutSession($sessionRepo);
 $getMe = new GetMe($userRepo);
+$getUser = new GetUser($userRepo);
+$setUserRole = new SetUserRole($userRepo);
+$deactivateUser = new DeactivateUser($userRepo);
 $getTreesInBbox = new GetTreesInBbox($treeRepo);
 $getSpecies = new GetSpecies($speciesRepo);
 $getTreeObservations = new GetTreeObservations($observationRepo);
 $addObservation = new AddObservation($tx, $observationRepo, $photoRepo, $treeDetailRepo, $treeRepo, $metricsCalculator, $weatherSummaryService);
 $getTreeDetails = new GetTreeDetails($treeDetailRepo);
 $getTree = new GetTree($treeRepo, $treeDetailRepo);
+$setTreeApprovalStatus = new SetTreeApprovalStatus($treeRepo);
+$assignTreeGuardian = new AssignTreeGuardian($treeRepo, $userRepo);
+
+// --- trees use case ---
 $createTree = new CreateTree(
   $tx,
   $treeRepo,
@@ -150,14 +163,15 @@ $app->get("/health", function (Request $req, Response $res) use ($pdo) {
 // Public trees endpoints
 AuthRoutes::register($app, $registerUser, $loginUser, $refreshSession, $logoutSession);
 MeRoutes::register($app, $getMe);
+AdminRoutes::register($app, $getUser, $setUserRole, $deactivateUser, $setTreeApprovalStatus, $assignTreeGuardian);
 
 TreesRoutes::registerWildlifeSpeciesPublic($app, $getWildlifeSpecies);
 TreesRoutes::registerPublic($app, $getTreesInBbox, $getSpecies, $getTree);
 PhotoRoutes::registerPublic($app, $fileStorage);
 
 // Protected endpoints (JWT required)
-$app->group('', function ($group) use ($createTree, $getTreeObservations, $addObservation, $getTreeDetails, $uploadPhoto, $getTreeWildlife, $createWildlife, $getTreeHealth, $createHealth) {
-  TreesRoutes::registerProtected($group, $createTree, $getTreeObservations, $addObservation, $getTreeDetails);
+$app->group('', function ($group) use ($createTree, $treeRepo, $getTreeObservations, $addObservation, $getTreeDetails, $uploadPhoto, $getTreeWildlife, $createWildlife, $getTreeHealth, $createHealth) {
+  TreesRoutes::registerProtected($group, $createTree, $treeRepo, $getTreeObservations, $addObservation, $getTreeDetails);
   TreesRoutes::registerWildlifeHealthProtected($group, $getTreeWildlife, $createWildlife, $getTreeHealth, $createHealth);
   PhotoRoutes::registerProtected($group, $uploadPhoto);
 })->add(new AuthMiddleware());

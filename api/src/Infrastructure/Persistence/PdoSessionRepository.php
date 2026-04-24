@@ -26,7 +26,7 @@ final class PdoSessionRepository implements SessionRepository {
 
   public function findByRefreshTokenHash(string $hash): ?array {
     $stmt = $this->pdo->prepare("
-      SELECT s.*, u.email, u.is_active
+      SELECT s.*, u.email, u.is_active, u.role
       FROM sessions s
       JOIN users u ON u.id = s.user_id
       WHERE s.refresh_token_hash = :hash

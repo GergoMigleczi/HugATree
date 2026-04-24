@@ -5,6 +5,7 @@ namespace App\Application\UseCase;
 
 use App\Application\Ports\SessionRepository;
 use App\Application\Ports\TokenService;
+use App\Domain\UserRole;
 
 final class RefreshSession {
   public function __construct(
@@ -47,7 +48,8 @@ final class RefreshSession {
       $row["ip_address"] ?? null
     );
 
-    $accessToken = $this->tokens->issueAccessToken((int)$row["user_id"], (string)$row["email"]);
+    $role = UserRole::tryFrom($row["role"] ?? "") ?? UserRole::USER;
+    $accessToken = $this->tokens->issueAccessToken((int)$row["user_id"], (string)$row["email"], $role);
 
     return [
       "accessToken" => $accessToken,

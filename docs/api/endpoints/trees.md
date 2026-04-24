@@ -62,6 +62,9 @@ curl -X POST "http://0.0.0.0:8000/trees" \
 
 Returns HTTP 201 with JSON body:
 
+> Note: New trees are created with `approval_status = "pending"` and must be approved by an admin before appearing in the public listing.
+
+
 ```
 {
 	"treeId": int,

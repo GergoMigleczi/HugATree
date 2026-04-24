@@ -7,6 +7,7 @@ use App\Application\Ports\PasswordHasher;
 use App\Application\Ports\SessionRepository;
 use App\Application\Ports\TokenService;
 use App\Application\Ports\UserRepository;
+use App\Domain\UserRole;
 
 final class LoginUser {
   public function __construct(
@@ -24,7 +25,8 @@ final class LoginUser {
       throw new \RuntimeException("Invalid credentials", 401);
     }
 
-    $accessToken = $this->tokens->issueAccessToken((int)$user["id"], (string)$user["email"]);
+    $role = UserRole::tryFrom($user["role"] ?? "") ?? UserRole::USER;
+    $accessToken = $this->tokens->issueAccessToken((int)$user["id"], (string)$user["email"], $role);
 
     $refreshToken = Tokens::newRefreshToken();
     $refreshHash = Tokens::hash($refreshToken);
@@ -43,6 +45,7 @@ final class LoginUser {
         "id" => (int)$user["id"],
         "email" => (string)$user["email"],
         "display_name" => $user["display_name"],
+        "role" => $role->value,
       ],
     ];
   }

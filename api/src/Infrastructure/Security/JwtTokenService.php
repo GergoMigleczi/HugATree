@@ -4,10 +4,11 @@ declare(strict_types=1);
 namespace App\Infrastructure\Security;
 
 use App\Application\Ports\TokenService;
+use App\Domain\UserRole;
 use Firebase\JWT\JWT;
 
 final class JwtTokenService implements TokenService {
-  public function issueAccessToken(int $userId, string $email): string {
+  public function issueAccessToken(int $userId, string $email, UserRole $role): string {
     $now = time();
     $ttl = ((int)($_ENV['ACCESS_TTL_MINUTES'] ?? 15)) * 60;
 
@@ -17,6 +18,7 @@ final class JwtTokenService implements TokenService {
       "exp" => $now + $ttl,
       "sub" => (string)$userId,
       "email" => $email,
+      "role" => $role->value,
     ];
 
     return JWT::encode($payload, $_ENV['JWT_SECRET'], "HS256");

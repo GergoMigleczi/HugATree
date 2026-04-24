@@ -196,4 +196,23 @@ final class PdoTreeRepository implements TreeRepository
       ];
   }
 
+  public function findById(int $id): ?array
+  {
+      $stmt = $this->pdo->prepare('SELECT * FROM trees WHERE id = :id LIMIT 1');
+      $stmt->execute(['id' => $id]);
+      $row = $stmt->fetch(PDO::FETCH_ASSOC);
+      return $row ?: null;
+  }
+
+  public function setApprovalStatus(int $treeId, string $status): void
+  {
+      $stmt = $this->pdo->prepare('UPDATE trees SET approval_status = :status WHERE id = :id');
+      $stmt->execute(['status' => $status, 'id' => $treeId]);
+  }
+
+  public function setGuardian(int $treeId, ?int $userId): void
+  {
+      $stmt = $this->pdo->prepare('UPDATE trees SET adopted_by_user_id = :user_id WHERE id = :id');
+      $stmt->execute(['user_id' => $userId, 'id' => $treeId]);
+  }
 }

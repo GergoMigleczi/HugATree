@@ -54,3 +54,7 @@ interface TreeRepository
    */
     public function getATree(int $treeId): ?array;
 }
+    public function setApprovalStatus(int $treeId, string $status): void;
+
+    public function setGuardian(int $treeId, ?int $userId): void;
+}

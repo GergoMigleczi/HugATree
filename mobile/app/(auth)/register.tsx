@@ -66,7 +66,10 @@ export default function RegisterScreen() {
     }
     try {
       setSubmitting(true);
-
+      console.warn("RegisterScreen.handleRegister start", {
+        email: email.trim(),
+        displayName: displayName.trim(),
+      });
       await withLoading(
         () => register(email.trim(), password, displayName.trim()),
         {
@@ -75,8 +78,10 @@ export default function RegisterScreen() {
           background: "transparent",
         }
       );
+      console.warn("RegisterScreen.handleRegister finished successfully");
       // AuthProvider sets isLoggedIn → Expo Router redirects to (tabs)
     } catch (e: any) {
+      console.error("RegisterScreen.handleRegister failed", e);
       Alert.alert("Registration failed", e.message ?? "Please try again.");
     } finally {
       setSubmitting(false);

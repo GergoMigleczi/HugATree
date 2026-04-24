@@ -15,7 +15,9 @@ use App\Application\UseCase\GetTreeWildlife;
 use App\Application\UseCase\CreateWildlife;
 use App\Application\UseCase\GetTreeHealth;
 use App\Application\UseCase\CreateHealth;
+use App\Domain\UserRole;
 use App\Http\Json;
+use App\Application\Ports\TreeRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -198,6 +200,7 @@ final class TreesRoutes
     public static function registerProtected(
         $routes,
         CreateTree $createTree,
+        TreeRepository $treeRepo,
         GetTreeObservations $getTreeObservations,
         AddObservation $addObservation,
         GetTreeDetails $getTreeDetails
@@ -234,10 +237,10 @@ final class TreesRoutes
             }
         });
 
-        // POST /trees/:id/observations (JWT required)
-        $routes->post('/trees/{id}/observations', function (Request $req, Response $res, array $args) use ($addObservation) {
+        // POST /trees/:id/observations (JWT required, guardian-only for assigned tree)
+        $routes->post('/trees/{id}/observations', function (Request $req, Response $res, array $args) use ($addObservation, $treeRepo) {
             $claims = $req->getAttribute('auth');
-            if (!is_array($claims) || empty($claims['sub'])) {
+            if (!is_array($claims) || empty($claims['sub']) || empty($claims['role'])) {
                 return Json::ok($res, ['error' => 'Unauthenticated'], 401);
             }
 
@@ -247,7 +250,23 @@ final class TreesRoutes
             }
 
             $userId = (int)$claims['sub'];
-            $body   = $req->getParsedBody();
+            $role = UserRole::tryFrom((string)$claims['role']) ?? UserRole::USER;
+            if ($role !== UserRole::ADMIN) {
+                if ($role !== UserRole::GUARDIAN) {
+                    return Json::ok($res, ['error' => 'Only guardians can add observations to existing trees'], 403);
+                }
+
+                $tree = $treeRepo->findById($treeId);
+                if (!$tree) {
+                    return Json::ok($res, ['error' => 'Tree not found'], 404);
+                }
+
+                if ((int)($tree['adopted_by_user_id'] ?? 0) !== $userId) {
+                    return Json::ok($res, ['error' => 'Only the assigned guardian can add observations to this tree'], 403);
+                }
+            }
+
+            $body = $req->getParsedBody();
             if (!is_array($body)) {
                 return Json::ok($res, ['error' => 'Invalid JSON body'], 400);
             }

@@ -5,6 +5,7 @@ namespace App\Application\UseCase;
 
 use App\Application\Ports\PasswordHasher;
 use App\Application\Ports\UserRepository;
+use App\Domain\UserRole;
 
 final class RegisterUser {
   public function __construct(
@@ -12,7 +13,7 @@ final class RegisterUser {
     private PasswordHasher $hasher
   ) {}
 
-  public function execute(string $email, string $password, ?string $displayName): array {
+  public function execute(string $email, string $password, ?string $displayName, UserRole $role = UserRole::USER): array {
     $email = strtolower(trim($email));
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -27,6 +28,6 @@ final class RegisterUser {
     }
 
     $hash = $this->hasher->hash($password);
-    return $this->users->create($email, $hash, $displayName);
+    return $this->users->create($email, $hash, $displayName, $role);
   }
 }
