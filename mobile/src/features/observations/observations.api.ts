@@ -1,4 +1,4 @@
-import { authFetch } from "@/src/api/authFetch";
+import { authFetch, refreshTokens } from "@/src/api/authFetch";
 import { getAccessToken } from "@/src/features/auth/tokens";
 import { API_URL } from "@/src/config/config";
 import type { ObservationFormData, ObservationItem, CreateObservationResponseApi } from "./observations.types";
@@ -17,29 +17,33 @@ function mimeTypeFromUri(uri: string): string {
   return "image/jpeg";
 }
 
-export async function uploadPhotoApi(localUri: string): Promise<string> {
+async function doUpload(localUri: string, mimeType: string): Promise<Response> {
   const accessToken = await getAccessToken();
-  const mimeType = mimeTypeFromUri(localUri);
-
   const formData = new FormData();
   formData.append("photo", {
     uri: localUri,
     type: mimeType,
     name: `photo.${mimeType.split("/")[1]}`,
   } as any);
-
-  const res = await fetch(`${API_URL}/photos/upload`, {
+  return fetch(`${API_URL}/photos/upload`, {
     method: "POST",
     headers: { Authorization: `Bearer ${accessToken}` },
     body: formData,
   });
+}
 
-  const data = await res.json();
+export async function uploadPhotoApi(localUri: string): Promise<string> {
+  const mimeType = mimeTypeFromUri(localUri);
+  let res = await doUpload(localUri, mimeType);
 
-  if (!res.ok) {
-    throw new Error(data?.error ?? `Upload failed (${res.status})`);
+  if (res.status === 401) {
+    const refreshed = await refreshTokens();
+    if (!refreshed) throw new Error("Session expired. Please log in again.");
+    res = await doUpload(localUri, mimeType);
   }
 
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error ?? `Upload failed (${res.status})`);
   return data.storageKey as string;
 }
 

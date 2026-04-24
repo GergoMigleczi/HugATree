@@ -18,7 +18,7 @@ export default function ObservationCard({ item, isInitial, onPhotoPress }: Props
 
   const dateLabel = item.observedAt ?? item.createdAt;
   const formattedDate = dateLabel
-    ? new Date(dateLabel).toLocaleDateString(undefined, {
+    ? new Date(dateLabel.replace(" ", "T").replace(/\+(\d{2})$/, "+$1:00")).toLocaleDateString(undefined, {
         day: "numeric",
         month: "short",
         year: "numeric",

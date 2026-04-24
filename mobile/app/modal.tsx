@@ -322,8 +322,8 @@ export default function TreeModalScreen() {
     <View style={styles.container}>
 
       {/* Header */}
-      <SafeAreaView edges={["top"]} style={styles.headerSafe}>
-        <View style={[styles.headerRow, { paddingTop: insets.top + 12 }]}>
+      <View style={styles.headerSafe}>
+        <View style={styles.headerRow}>
           <Pressable onPress={() => router.back()} style={styles.closeBtn} hitSlop={8}>
             <Ionicons name="close" size={20} color={Brand.charcoal} />
           </Pressable>
@@ -342,7 +342,7 @@ export default function TreeModalScreen() {
           </Pressable>
           {renderHeaderAction()}
         </View>
-      </SafeAreaView>
+      </View>
 
       {/* Tab bar — hidden while in add mode */}
       {mode === "view" && (
@@ -381,7 +381,7 @@ export default function TreeModalScreen() {
                         <View style={styles.detailsFooterItem}>
                           <Ionicons name="calendar-outline" size={11} color={Brand.softGray} />
                           <Text style={styles.detailsFooterText}>
-                            {new Date(details.recordedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
+                            {new Date(details.recordedAt.replace(" ", "T").replace(/\+(\d{2})$/, "+$1:00")).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
                           </Text>
                         </View>
                       )}
@@ -551,6 +551,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 12,
   },
   closeBtn: {

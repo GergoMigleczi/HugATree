@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -413,13 +413,28 @@ export default function MapRoute() {
                   <Text style={styles.label}>Date planted</Text>
                   <Pressable
                     style={styles.fakeInput}
-                    onPress={() => setShowDatePicker((v) => !v)}
+                    onPress={() => setShowDatePicker(true)}
                   >
                     <Text style={{ color: plantedAt ? Brand.charcoal : "#999", fontSize: 14 }}>
                       {plantedAt || "Select a date"}
                     </Text>
                   </Pressable>
-                  {showDatePicker && (
+                </View>
+
+                <Modal
+                  visible={showDatePicker}
+                  transparent
+                  animationType="slide"
+                  onRequestClose={() => setShowDatePicker(false)}
+                >
+                  <Pressable style={styles.datePickerBackdrop} onPress={() => setShowDatePicker(false)} />
+                  <View style={styles.datePickerSheet}>
+                    <View style={styles.datePickerHeader}>
+                      <Text style={styles.datePickerTitle}>Date planted</Text>
+                      <Pressable onPress={() => setShowDatePicker(false)}>
+                        <Text style={styles.datePickerDone}>Done</Text>
+                      </Pressable>
+                    </View>
                     <DateTimePicker
                       mode="date"
                       display="spinner"
@@ -428,14 +443,13 @@ export default function MapRoute() {
                       onChange={(_event, date) => {
                         if (date) {
                           setPlantedAtDate(date);
-                          const iso = date.toISOString().slice(0, 10);
-                          setPlantedAt(iso);
+                          setPlantedAt(date.toISOString().slice(0, 10));
                         }
-                        setShowDatePicker(false);
                       }}
+                      style={{ width: "100%" }}
                     />
-                  )}
-                </View>
+                  </View>
+                </Modal>
 
                 <View style={styles.field}>
                   <Text style={styles.label}>Address</Text>
@@ -632,6 +646,36 @@ const styles = StyleSheet.create({
   },
 
   notListedBtn: { paddingVertical: 4 },
+
+  datePickerBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
+  },
+  datePickerSheet: {
+    backgroundColor: Brand.white,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 32,
+  },
+  datePickerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Brand.pale,
+  },
+  datePickerTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: Brand.charcoal,
+  },
+  datePickerDone: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: Brand.primary,
+  },
   notListedText: { fontSize: 12, color: Brand.primary, fontWeight: "600" },
 
   row: { flexDirection: "row", gap: 10, justifyContent: "flex-end" },
