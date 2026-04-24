@@ -23,7 +23,7 @@ async function refreshTokensOnce(): Promise<boolean> {
   }
 }
 
-async function refreshTokens(): Promise<boolean> {
+export async function refreshTokens(): Promise<boolean> {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       try {

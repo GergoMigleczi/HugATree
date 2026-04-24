@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -33,6 +34,7 @@ import { uploadPhotoApi } from "@/src/features/observations/observations.api";
 
 export default function MapRoute() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [error, setError] = useState<string | null>(null);
   const [recenterToken, setRecenterToken] = useState(0);
@@ -74,6 +76,8 @@ export default function MapRoute() {
   // Tree-level optional fields (stage 1)
   const [plantedBy, setPlantedBy] = useState("");
   const [plantedAt, setPlantedAt] = useState("");
+  const [plantedAtDate, setPlantedAtDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [addressText, setAddressText] = useState("");
 
   // Observation form state for Stage 2
@@ -108,6 +112,8 @@ export default function MapRoute() {
     setDraftLocation(null);
     setPlantedBy("");
     setPlantedAt("");
+    setPlantedAtDate(null);
+    setShowDatePicker(false);
     setAddressText("");
     setFormData(EMPTY_OBSERVATION_FORM);
     setWildlifeData(EMPTY_WILDLIFE_FORM);
@@ -118,8 +124,10 @@ export default function MapRoute() {
 
   // Validate mandatory stage-2 fields and return an error message, or null if OK
   function validateStage2(): string | null {
+    if (!formData.title.trim()) return "Title is required — go to the Note tab.";
     if (!formData.details.heightM) return "Height (m) is required — go to the Details tab.";
     if (!formData.details.trunkDiameterCm) return "Trunk diameter (cm) is required — go to the Details tab.";
+    if (!formData.details.canopyDiameterM) return "Canopy diameter (m) is required — go to the Details tab.";
     return null;
   }
 
@@ -331,7 +339,7 @@ export default function MapRoute() {
         >
           {sheetStage === 1 && (
             <BottomSheetScrollView
-              contentContainerStyle={styles.sheetContent}
+              contentContainerStyle={[styles.sheetContent, { paddingTop: insets.top + 16 }]}
               keyboardShouldPersistTaps="handled"
             >
                 <Text style={styles.sheetTitle}>Add a Tree</Text>
@@ -403,15 +411,45 @@ export default function MapRoute() {
 
                 <View style={styles.field}>
                   <Text style={styles.label}>Date planted</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={plantedAt}
-                    onChangeText={setPlantedAt}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor="#999"
-                    keyboardType="numbers-and-punctuation"
-                  />
+                  <Pressable
+                    style={styles.fakeInput}
+                    onPress={() => setShowDatePicker(true)}
+                  >
+                    <Text style={{ color: plantedAt ? Brand.charcoal : "#999", fontSize: 14 }}>
+                      {plantedAt || "Select a date"}
+                    </Text>
+                  </Pressable>
                 </View>
+
+                <Modal
+                  visible={showDatePicker}
+                  transparent
+                  animationType="slide"
+                  onRequestClose={() => setShowDatePicker(false)}
+                >
+                  <Pressable style={styles.datePickerBackdrop} onPress={() => setShowDatePicker(false)} />
+                  <View style={styles.datePickerSheet}>
+                    <View style={styles.datePickerHeader}>
+                      <Text style={styles.datePickerTitle}>Date planted</Text>
+                      <Pressable onPress={() => setShowDatePicker(false)}>
+                        <Text style={styles.datePickerDone}>Done</Text>
+                      </Pressable>
+                    </View>
+                    <DateTimePicker
+                      mode="date"
+                      display="spinner"
+                      value={plantedAtDate ?? new Date()}
+                      maximumDate={new Date()}
+                      onChange={(_event, date) => {
+                        if (date) {
+                          setPlantedAtDate(date);
+                          setPlantedAt(date.toISOString().slice(0, 10));
+                        }
+                      }}
+                      style={{ width: "100%" }}
+                    />
+                  </View>
+                </Modal>
 
                 <View style={styles.field}>
                   <Text style={styles.label}>Address</Text>
@@ -445,10 +483,10 @@ export default function MapRoute() {
                 contentContainerStyle={styles.stage2ScrollContent}
                 keyboardShouldPersistTaps="handled"
               >
-                <View style={styles.stage2Header}>
+                <View style={[styles.stage2Header, { paddingTop: (insets.top > 0 ? insets.top : 0) + 16 }]}>
                   <Text style={styles.sheetTitle}>Initial Observation</Text>
                   <Text style={styles.stage2Sub}>
-                    Height and trunk diameter are required (* fields).
+                    Title, height, trunk diameter and canopy diameter are required (* fields).
                   </Text>
                 </View>
 
@@ -566,7 +604,6 @@ const styles = StyleSheet.create({
 
   sheetContent: {
     paddingHorizontal: 16,
-    paddingTop: 8,
     paddingBottom: 24,
     gap: 14,
   },
@@ -609,13 +646,43 @@ const styles = StyleSheet.create({
   },
 
   notListedBtn: { paddingVertical: 4 },
+
+  datePickerBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
+  },
+  datePickerSheet: {
+    backgroundColor: Brand.white,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 32,
+  },
+  datePickerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Brand.pale,
+  },
+  datePickerTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: Brand.charcoal,
+  },
+  datePickerDone: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: Brand.primary,
+  },
   notListedText: { fontSize: 12, color: Brand.primary, fontWeight: "600" },
 
   row: { flexDirection: "row", gap: 10, justifyContent: "flex-end" },
 
   stage2Container: { flex: 1 },
   stage2ScrollContent: { paddingBottom: 16 },
-  stage2Header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
+  stage2Header: { paddingHorizontal: 16, paddingBottom: 12 },
   stage2Sub: { fontSize: 12, color: Brand.midGray, marginTop: 2 },
   stage2Footer: {
     flexDirection: "row",

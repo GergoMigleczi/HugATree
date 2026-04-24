@@ -2,14 +2,14 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Image } from "expo-image";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -84,6 +84,7 @@ function healthToCard(h: HealthItem): ObservationItem {
 export default function TreeModalScreen() {
   const { treeId } = useLocalSearchParams<{ treeId: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { withLoading } = useLoading();
 
   const numericTreeId = treeId ? parseInt(treeId, 10) : null;
@@ -169,6 +170,19 @@ export default function TreeModalScreen() {
   /* ── Save ───────────────────────────────────────────────────────────────── */
   async function handleSave() {
     if (!numericTreeId) return;
+
+    // Validate required fields
+    if (tab !== "wildlife" && tab !== "health") {
+      if (!formData.title.trim()) {
+        Alert.alert("Missing required fields", "Title is required — go to the Note tab.");
+        return;
+      }
+    }
+    if (tab === "details" && !formData.details.canopyDiameterM) {
+      Alert.alert("Missing required fields", "Canopy diameter (m) is required — go to the Details tab.");
+      return;
+    }
+
     try {
       // Upload photo first if one was selected — same pattern as map.tsx
       let photoKeys: string[] = [];
@@ -308,7 +322,7 @@ export default function TreeModalScreen() {
     <View style={styles.container}>
 
       {/* Header */}
-      <SafeAreaView edges={["top"]} style={styles.headerSafe}>
+      <View style={styles.headerSafe}>
         <View style={styles.headerRow}>
           <Pressable onPress={() => router.back()} style={styles.closeBtn} hitSlop={8}>
             <Ionicons name="close" size={20} color={Brand.charcoal} />
@@ -328,7 +342,7 @@ export default function TreeModalScreen() {
           </Pressable>
           {renderHeaderAction()}
         </View>
-      </SafeAreaView>
+      </View>
 
       {/* Tab bar — hidden while in add mode */}
       {mode === "view" && (
@@ -367,7 +381,7 @@ export default function TreeModalScreen() {
                         <View style={styles.detailsFooterItem}>
                           <Ionicons name="calendar-outline" size={11} color={Brand.softGray} />
                           <Text style={styles.detailsFooterText}>
-                            {new Date(details.recordedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
+                            {new Date(details.recordedAt.replace(" ", "T").replace(/\+(\d{2})$/, "+$1:00")).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
                           </Text>
                         </View>
                       )}
@@ -391,7 +405,7 @@ export default function TreeModalScreen() {
               {/* Hero photo — first observation photo, overview tab only */}
               {tab === "overview" && heroPhotoUri && (
                 <Pressable onPress={() => setViewingPhoto(heroPhotoUri)} style={styles.heroWrap}>
-                  <Image source={{ uri: heroPhotoUri }} style={styles.heroImage} resizeMode="cover" />
+                  <Image source={{ uri: heroPhotoUri }} style={styles.heroImage} contentFit="cover" />
                   <View style={styles.heroOverlay}>
                     <Ionicons name="expand-outline" size={18} color="#fff" />
                   </View>
@@ -481,7 +495,7 @@ export default function TreeModalScreen() {
             initialTab={formInitialTab()}
           />
 
-          <View style={styles.formFooter}>
+          <View style={[styles.formFooter, { paddingBottom: insets.bottom + 16 }]}>
             <Pressable onPress={cancelAdd} style={styles.secondaryBtn}>
               <Text style={styles.secondaryBtnText}>Cancel</Text>
             </Pressable>
@@ -537,6 +551,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 12,
   },
   closeBtn: {
@@ -563,7 +578,7 @@ const styles = StyleSheet.create({
   cancelBtn:     { paddingHorizontal: 12, paddingVertical: 8 },
   cancelBtnText: { fontSize: 13, fontWeight: "600", color: Brand.midGray },
 
-  listContent: { padding: 16, gap: 10, paddingBottom: 32 },
+  listContent: { padding: 16, gap: 10, paddingBottom: 48 },
 
   heroWrap: {
     borderRadius: 12,
@@ -593,6 +608,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Brand.pale,
     overflow: "hidden",
+    marginTop: 8,
+    marginBottom: 16,
   },
   detailRow: {
     flexDirection: "row",
@@ -648,7 +665,8 @@ const styles = StyleSheet.create({
   formFooter: {
     flexDirection: "row",
     gap: 10,
-    padding: 16,
+    paddingTop: 16,
+    paddingHorizontal: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Brand.pale,
     backgroundColor: Brand.white,
