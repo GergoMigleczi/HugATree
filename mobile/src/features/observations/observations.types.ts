@@ -95,6 +95,15 @@ export const EMPTY_HEALTH_FORM: HealthFormData = {
 ========================= */
 
 /**
+ * Normalises a date string from the API (space separator, bare UTC offset like +00)
+ * to a valid ISO 8601 string that browsers and React Native parse correctly.
+ * e.g. "2024-01-15 10:30:00+00" → "2024-01-15T10:30:00+00:00"
+ */
+export function normaliseApiDate(raw: string): string {
+  return raw.replace(" ", "T").replace(/\+(\d{2})$/, "+$1:00");
+}
+
+/**
  * Converts string form fields to typed numbers ready for the API.
  * Returns undefined if no fields have been filled in.
  */
