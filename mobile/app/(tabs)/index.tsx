@@ -52,7 +52,7 @@ function getGreeting(): string {
 }
 
 export default function HomeScreen() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const router = useRouter();
 
   const scheme = useColorScheme();
@@ -146,6 +146,17 @@ export default function HomeScreen() {
         },
       }),
     },
+    ...(isAdmin ? [{
+      type:     "tile" as const,
+      id:       "admin",
+      title:    "Admin",
+      subtitle: "Manage users",
+      cols:     2,
+      rows:     1,
+      icon:     "shield-checkmark-outline" as const,
+      accent:   Brand.forest,
+      onPress:  () => router.push("/admin"),
+    }] : []),
   ];
 
   return (

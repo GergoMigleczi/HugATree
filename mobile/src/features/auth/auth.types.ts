@@ -32,6 +32,7 @@ export type AuthContextValue = {
   loading: boolean;
   user: User | null;
   isLoggedIn: boolean;
+  isAdmin: boolean;
   refreshUser: () => Promise<void>;
   register: (email: string, password: string, displayName: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
