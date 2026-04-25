@@ -36,7 +36,8 @@ import { uploadPhotoApi } from "@/src/features/observations/observations.api";
 export default function MapRoute() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { startAddingTree, actionId } = useLocalSearchParams();
+  const { startAddingTree, actionId, mode } = useLocalSearchParams();
+  const isApprovalMode = mode === "adminApproval";
 
   const [error, setError] = useState<string | null>(null);
   const [recenterToken, setRecenterToken] = useState(0);
