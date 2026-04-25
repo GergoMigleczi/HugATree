@@ -68,7 +68,7 @@ export default function RegisterScreen() {
       setSubmitting(true);
 
       await withLoading(
-        () => register(email.trim(), password, displayName.trim(), false),
+        () => register(email.trim(), password, displayName.trim()),
         {
           message: "Creating account...",
           blocking: true,
