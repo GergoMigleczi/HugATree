@@ -27,7 +27,7 @@ const ACCENTS = {
 } as const;
 
 export default function AdminHomeScreen() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   const scheme = useColorScheme();
@@ -46,14 +46,6 @@ export default function AdminHomeScreen() {
         headerShown: false,
     });
     }, [navigation]);
-
-  async function handleLogout() {
-    try {
-      await logout();
-    } catch (e: any) {
-      Alert.alert("Logout failed", e.message);
-    }
-  }
 
   const firstName = user?.display_name?.split(" ")[0] ?? "Admin";
 
@@ -104,19 +96,8 @@ export default function AdminHomeScreen() {
             <View style={styles.headerLeft}>
                 
                 {/* 👇 Back button */}
-                <Pressable
-                onPress={() => router.back()}
-                hitSlop={10}
-                style={({ pressed }) => [
-                    styles.backBtn,
-                    {
-                    backgroundColor: cardBg,
-                    borderColor: borderCl,
-                    opacity: pressed ? 0.7 : 1,
-                    },
-                ]}
-                >
-                <Ionicons name="arrow-back" size={20} color={subCol} />
+                <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
+                    <Ionicons name="chevron-back" size={24} color={textCol} />
                 </Pressable>
 
                 {/* Logo */}
@@ -164,14 +145,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 8,
   },
-  backBtn: {
-  width: 40,
-  height: 40,
-  borderRadius: 20,
-  borderWidth: 1,
-  alignItems: "center",
-  justifyContent: "center",
-},
+  backBtn:    { padding: 4 },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",

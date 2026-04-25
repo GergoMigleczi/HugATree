@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useNavigation } from "expo-router";
 
 import { useAuth } from "@/src/features/auth/AuthProvider";
 import { Brand } from "@/constants/theme";
@@ -34,6 +34,14 @@ export default function AdminScreen() {
   const [loading, setLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const navigation = useNavigation();
+
+    useEffect(() => {
+    navigation.setOptions({
+        headerShown: false,
+    });
+    }, [navigation]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
