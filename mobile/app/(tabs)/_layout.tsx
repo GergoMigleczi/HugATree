@@ -22,10 +22,9 @@
  *  3. Customise the tab icon/label via <Stack.Screen options> inside the file,
  *     or add a <Tabs.Screen> block below with the desired options.
  */
-
-import { Redirect, Stack, Tabs } from "expo-router";
+import { Redirect, Stack } from "expo-router";
 import { useEffect } from "react";
-import { Ionicons } from "@expo/vector-icons";
+
 import { useAuth } from "@/src/features/auth/AuthProvider";
 import { useLoading } from "@/src/ui/loading/LoadingProvider";
 
@@ -35,49 +34,21 @@ export default function TabsLayout() {
 
   useEffect(() => {
     if (loading) {
-      show({ message: "Loading...",
+      show({
+        message: "Loading...",
         blocking: true,
-        background: "solid" });
+        background: "solid",
+      });
     } else {
       hide();
     }
 
-    // ensure overlay is not left on if layout unmounts
     return () => hide();
   }, [loading, show, hide]);
 
-  // While auth is resolving, render something cheap (Stack is fine),
-  // overlay will block interaction anyway.
   if (loading) return <Stack screenOptions={{ headerShown: false }} />;
 
-  // Not authenticated — redirect to login
   if (!isLoggedIn) return <Redirect href="/(auth)/login" />;
 
-  // Authenticated — render tab navigator with named tabs and icons.
-  // Each <Tabs.Screen> overrides the auto-generated label (e.g. "index", "map expo")
-  // with a human-readable title and a matching Ionicons glyph.
-  return (
-    <Tabs screenOptions={{ headerShown: false }}>
-      {/* Home tab */}
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      {/* Map tab */}
-      <Tabs.Screen
-        name="map"
-        options={{
-          title: "Map",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="map-outline" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
-  );
+  return <Stack screenOptions={{ headerShown: false }} />;
 }
