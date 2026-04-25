@@ -129,17 +129,6 @@ export default function HomeScreen() {
       accent:   ACCENTS.amber,
       onPress:  () => router.push("/reports"),
     },
-    {
-      type:     "tile",
-      id:       "add-tree",
-      title:    "Add Tree",
-      subtitle: "Log a new record",
-      cols:     2,
-      rows:     1,
-      icon:     "add-circle-outline",
-      accent:   ACCENTS.teal,
-      onPress:  () => router.push("/add-tree"),
-    },
     ...(user?.role === "admin"
       ? [{
           type:     "tile" as const,
