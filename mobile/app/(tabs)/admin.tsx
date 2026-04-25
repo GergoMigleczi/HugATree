@@ -136,6 +136,7 @@ export default function AdminScreen() {
             <ActivityIndicator size="small" color={Brand.primary} />
           ) : (
             <Switch
+              testID={`toggle-${item.id}`}
               value={item.is_active}
               onValueChange={() => handleToggle(item)}
               disabled={isSelf}
@@ -152,7 +153,7 @@ export default function AdminScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]} edges={["top"]}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: borderCl }]}>
-        <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
+        <Pressable testID="back-btn" onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={textCol} />
         </Pressable>
         <Text style={[styles.title, { color: textCol }]}>Admin Dashboard</Text>
