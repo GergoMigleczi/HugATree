@@ -31,6 +31,7 @@ import { useAuth } from "@/src/features/auth/AuthProvider";
 import { Brand } from "@/constants/theme";
 import { HomeGrid, type GridItem } from "../../src/features/home/components/HomeGrid";
 import { useLiveLocation } from "@/src/features/location/hooks/useLiveLocation";
+import { navigate } from "expo-router/build/global-state/routing";
 
 // HugATree logo — place PNG at mobile/assets/images/logo.png
 const LOGO = require("@/assets/images/logo.png");
@@ -138,7 +139,12 @@ export default function HomeScreen() {
       rows:     1,
       icon:     "add-circle-outline",
       accent:   ACCENTS.teal,
-      onPress:  () => router.push("/add-tree"),
+      onPress: () => router.push({
+        pathname: "/map",
+        params: { startAddingTree: "true",
+                  actionId: Date.now().toString()
+        },
+      }),
     },
   ];
 

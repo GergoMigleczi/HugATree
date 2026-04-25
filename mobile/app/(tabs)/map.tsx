@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -35,6 +36,7 @@ import { uploadPhotoApi } from "@/src/features/observations/observations.api";
 export default function MapRoute() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { startAddingTree, actionId } = useLocalSearchParams();
 
   const [error, setError] = useState<string | null>(null);
   const [recenterToken, setRecenterToken] = useState(0);
@@ -98,6 +100,12 @@ export default function MapRoute() {
   const speciesState = useSpeciesOptions(sheetStage === 1);
 
   const openAddTree = () => setSheetStage(1);
+
+  useEffect(() => {
+    if (startAddingTree === "true") {
+      openAddTree(); // reset param so it doesn't trigger again on re-render
+    }
+  }, [startAddingTree, actionId]);
 
   // Stage 1 is complete when location is set AND either a species is selected or a custom name is entered
   const hasSpecies = !!speciesId || customSpeciesName.trim().length > 0;

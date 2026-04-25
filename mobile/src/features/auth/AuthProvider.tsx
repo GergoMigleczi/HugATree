@@ -17,14 +17,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: me.user.id,
         email: me.user.email,
         display_name: me.user.display_name,
+        admin_flag: me.user.admin_flag,
       });
     } catch {
       setUser(null);
     }
   }
 
-  async function register(email: string, password: string, displayName: string) {
-    await registerApi({ email, password, displayName });
+  async function register(email: string, password: string, displayName: string, adminFlag: boolean = false) {
+    try{
+      await registerApi({ email, password, displayName, adminFlag });
+    }catch (e: any) {
+      if (e?.status === 400) {
+        throw new Error(e?.data?.error || "Registration failed");
+      }
+      throw e;
+    }
 
     // auto-login after registration
     const data = await loginApi({ email, password, deviceLabel: "expo" });
@@ -55,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       user,
       isLoggedIn: !!user,
+      isAdmin: !!user?.admin_flag,
       refreshUser,
       register,
       login,

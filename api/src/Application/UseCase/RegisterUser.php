@@ -12,7 +12,7 @@ final class RegisterUser {
     private PasswordHasher $hasher
   ) {}
 
-  public function execute(string $email, string $password, ?string $displayName): array {
+  public function execute(string $email, string $password, ?string $displayName, ?bool $adminFlag = false): array {
     $email = strtolower(trim($email));
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -27,6 +27,6 @@ final class RegisterUser {
     }
 
     $hash = $this->hasher->hash($password);
-    return $this->users->create($email, $hash, $displayName);
+    return $this->users->create($email, $hash, $displayName, $adminFlag);
   }
 }

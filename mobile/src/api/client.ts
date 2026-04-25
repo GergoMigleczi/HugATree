@@ -37,7 +37,6 @@ export async function apiRequest<T>(path: string, opts: ApiRequestOptions = {}):
   }
 
   const data = await parseJsonSafe(res);
-
   if (!res.ok) {
     const msg = data?.error || `Request failed (${res.status})`;
     const err = new Error(msg) as Error & { status?: number; data?: any };
