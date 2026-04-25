@@ -31,7 +31,7 @@ jest.spyOn(Alert, "alert");
 
 // ── Subject under test ─────────────────────────────────────────────────────
 
-import AdminScreen from "@/app/(tabs)/admin";
+import AdminScreen from "@/app/(admin)/users";
 
 // ── Fixtures ───────────────────────────────────────────────────────────────
 
