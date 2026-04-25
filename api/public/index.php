@@ -12,6 +12,7 @@ ini_set('log_errors', '1');
 error_reporting(E_ALL);
 
 use App\Http\Json;
+use App\Http\Routes\AdminRoutes;
 use App\Http\Routes\AuthRoutes;
 use App\Http\Routes\MeRoutes;
 use App\Http\Routes\PhotoRoutes;
@@ -38,6 +39,7 @@ use App\Infrastructure\Storage\LocalFileStorageService;
 use App\Application\Service\TreeMetricsCalculator;
 use App\Application\Service\WeatherSummaryService;
 
+use App\Application\UseCase\GetAllUsers;
 use App\Application\UseCase\GetMe;
 use App\Application\UseCase\LoginUser;
 use App\Application\UseCase\UploadPhoto;
@@ -56,6 +58,7 @@ use App\Application\UseCase\GetTreeWildlife;
 use App\Application\UseCase\CreateWildlife;
 use App\Application\UseCase\GetTreeHealth;
 use App\Application\UseCase\CreateHealth;
+use App\Application\UseCase\SetUserActive;
 
 use Dotenv\Dotenv;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -124,6 +127,8 @@ $loginUser = new LoginUser($userRepo, $sessionRepo, $passwordHasher, $tokenServi
 $refreshSession = new RefreshSession($sessionRepo, $tokenService);
 $logoutSession = new LogoutSession($sessionRepo);
 $getMe = new GetMe($userRepo);
+$getAllUsers = new GetAllUsers($userRepo);
+$setUserActive = new SetUserActive($userRepo);
 $getTreesInBbox = new GetTreesInBbox($treeRepo);
 $getSpecies = new GetSpecies($speciesRepo);
 $getTreeObservations = new GetTreeObservations($observationRepo);
@@ -151,6 +156,7 @@ $app->get("/health", function (Request $req, Response $res) use ($pdo) {
 // Public trees endpoints
 AuthRoutes::register($app, $registerUser, $loginUser, $refreshSession, $logoutSession);
 MeRoutes::register($app, $getMe);
+AdminRoutes::register($app, $getAllUsers, $setUserActive, $userRepo);
 
 TreesRoutes::registerWildlifeSpeciesPublic($app, $getWildlifeSpecies);
 TreesRoutes::registerPublic($app, $getTreesInBbox, $getSpecies, $getTree);
