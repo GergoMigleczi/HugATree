@@ -140,6 +140,19 @@ export default function HomeScreen() {
       accent:   ACCENTS.teal,
       onPress:  () => router.push("/add-tree"),
     },
+    ...(user?.role === "admin"
+      ? [{
+          type:     "tile" as const,
+          id:       "admin",
+          title:    "Admin",
+          subtitle: "Manage users",
+          cols:     2 as const,
+          rows:     1 as const,
+          icon:     "shield-outline" as const,
+          accent:   Brand.forest,
+          onPress:  () => router.push("/(admin)/users"),
+        }]
+      : []),
   ];
 
   return (

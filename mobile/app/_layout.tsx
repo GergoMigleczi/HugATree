@@ -29,6 +29,9 @@ export default function RootLayout() {
               {/* Your existing tabs */}
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
+              {/* Admin screens */}
+              <Stack.Screen name="(admin)" options={{ headerShown: false }} />
+
               {/* Existing modal */}
               <Stack.Screen
                 name="modal"
