@@ -17,6 +17,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: me.user.id,
         email: me.user.email,
         display_name: me.user.display_name,
+        role: (me.user as any).role ?? "user",
       });
     } catch {
       setUser(null);
