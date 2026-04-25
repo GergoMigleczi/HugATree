@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use App\Http\Json;
+use App\Http\Routes\AdminRoutes;
 use App\Http\Routes\AuthRoutes;
 use App\Http\Routes\MeRoutes;
 use App\Http\Routes\PhotoRoutes;
@@ -28,6 +29,8 @@ use App\Infrastructure\Storage\LocalFileStorageService;
 use App\Application\Service\TreeMetricsCalculator;
 use App\Application\Service\WeatherSummaryService;
 
+use App\Application\UseCase\DeactivateUser;
+use App\Application\UseCase\GetAdminUsers;
 use App\Application\UseCase\GetMe;
 use App\Application\UseCase\LoginUser;
 use App\Application\UseCase\UploadPhoto;
@@ -123,6 +126,8 @@ $loginUser = new LoginUser($userRepo, $sessionRepo, $passwordHasher, $tokenServi
 $refreshSession = new RefreshSession($sessionRepo, $tokenService);
 $logoutSession = new LogoutSession($sessionRepo);
 $getMe = new GetMe($userRepo);
+$getAdminUsers = new GetAdminUsers($userRepo);
+$deactivateUser = new DeactivateUser($userRepo);
 $getTreesInBbox = new GetTreesInBbox($treeRepo);
 $getSpecies = new GetSpecies($speciesRepo);
 $getTreeObservations = new GetTreeObservations($observationRepo);
@@ -150,6 +155,7 @@ $app->get("/health", function (Request $req, Response $res) use ($pdo) {
 // Public trees endpoints
 AuthRoutes::register($app, $registerUser, $loginUser, $refreshSession, $logoutSession);
 MeRoutes::register($app, $getMe);
+AdminRoutes::register($app, $getAdminUsers, $deactivateUser, $userRepo);
 
 TreesRoutes::registerWildlifeSpeciesPublic($app, $getWildlifeSpecies);
 TreesRoutes::registerPublic($app, $getTreesInBbox, $getSpecies, $getTree);
