@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -76,8 +75,6 @@ export default function MapRoute() {
   // Tree-level optional fields (stage 1)
   const [plantedBy, setPlantedBy] = useState("");
   const [plantedAt, setPlantedAt] = useState("");
-  const [plantedAtDate, setPlantedAtDate] = useState<Date | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [addressText, setAddressText] = useState("");
 
   // Observation form state for Stage 2
@@ -112,8 +109,6 @@ export default function MapRoute() {
     setDraftLocation(null);
     setPlantedBy("");
     setPlantedAt("");
-    setPlantedAtDate(null);
-    setShowDatePicker(false);
     setAddressText("");
     setFormData(EMPTY_OBSERVATION_FORM);
     setWildlifeData(EMPTY_WILDLIFE_FORM);
@@ -122,12 +117,30 @@ export default function MapRoute() {
 
   const { withLoading } = useLoading();
 
+  // Parses DD/MM/YYYY → YYYY-MM-DD, returns null if invalid
+  function parsePlantedAt(input: string): string | null {
+    const match = input.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return null;
+    const [, dd, mm, yyyy] = match;
+    const d = parseInt(dd, 10);
+    const m = parseInt(mm, 10);
+    const y = parseInt(yyyy, 10);
+    if (y < 1800 || y > new Date().getFullYear()) return null;
+    if (m < 1 || m > 12) return null;
+    const date = new Date(y, m - 1, d);
+    // If JS rolls the date over (e.g. 30/02), the day won't match
+    if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
+    if (date > new Date()) return null;
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
   // Validate mandatory stage-2 fields and return an error message, or null if OK
   function validateStage2(): string | null {
     if (!formData.title.trim()) return "Title is required — go to the Note tab.";
     if (!formData.details.heightM) return "Height (m) is required — go to the Details tab.";
     if (!formData.details.trunkDiameterCm) return "Trunk diameter (cm) is required — go to the Details tab.";
     if (!formData.details.canopyDiameterM) return "Canopy diameter (m) is required — go to the Details tab.";
+    if (plantedAt.trim() && !parsePlantedAt(plantedAt)) return "Date planted must be a valid date in DD/MM/YYYY format and not in the future.";
     return null;
   }
 
@@ -163,7 +176,7 @@ export default function MapRoute() {
             ...(speciesId ? { speciesId: parseInt(speciesId) } : {}),
             ...(customSpeciesName.trim() ? { customSpeciesName: customSpeciesName.trim() } : {}),
             ...(plantedBy.trim() ? { plantedBy: plantedBy.trim() } : {}),
-            ...(plantedAt.trim() ? { plantedAt: plantedAt.trim() } : {}),
+            ...(plantedAt.trim() ? { plantedAt: parsePlantedAt(plantedAt)! } : {}),
             ...(addressText.trim() ? { addressText: addressText.trim() } : {}),
           },
           observation: {
@@ -411,45 +424,22 @@ export default function MapRoute() {
 
                 <View style={styles.field}>
                   <Text style={styles.label}>Date planted</Text>
-                  <Pressable
-                    style={styles.fakeInput}
-                    onPress={() => setShowDatePicker(true)}
-                  >
-                    <Text style={{ color: plantedAt ? Brand.charcoal : "#999", fontSize: 14 }}>
-                      {plantedAt || "Select a date"}
-                    </Text>
-                  </Pressable>
+                  <TextInput
+                    style={styles.textInput}
+                    value={plantedAt}
+                    onChangeText={(text) => {
+                      const digits = text.replace(/\D/g, "").slice(0, 8);
+                      let formatted = digits;
+                      if (digits.length > 4) formatted = `${digits.slice(0,2)}/${digits.slice(2,4)}/${digits.slice(4)}`;
+                      else if (digits.length > 2) formatted = `${digits.slice(0,2)}/${digits.slice(2)}`;
+                      setPlantedAt(formatted);
+                    }}
+                    placeholder="DD/MM/YYYY"
+                    placeholderTextColor="#999"
+                    keyboardType="number-pad"
+                    maxLength={10}
+                  />
                 </View>
-
-                <Modal
-                  visible={showDatePicker}
-                  transparent
-                  animationType="slide"
-                  onRequestClose={() => setShowDatePicker(false)}
-                >
-                  <Pressable style={styles.datePickerBackdrop} onPress={() => setShowDatePicker(false)} />
-                  <View style={styles.datePickerSheet}>
-                    <View style={styles.datePickerHeader}>
-                      <Text style={styles.datePickerTitle}>Date planted</Text>
-                      <Pressable onPress={() => setShowDatePicker(false)}>
-                        <Text style={styles.datePickerDone}>Done</Text>
-                      </Pressable>
-                    </View>
-                    <DateTimePicker
-                      mode="date"
-                      display="spinner"
-                      value={plantedAtDate ?? new Date()}
-                      maximumDate={new Date()}
-                      onChange={(_event, date) => {
-                        if (date) {
-                          setPlantedAtDate(date);
-                          setPlantedAt(date.toISOString().slice(0, 10));
-                        }
-                      }}
-                      style={{ width: "100%" }}
-                    />
-                  </View>
-                </Modal>
 
                 <View style={styles.field}>
                   <Text style={styles.label}>Address</Text>
@@ -656,6 +646,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingBottom: 32,
+    paddingHorizontal: 8,
   },
   datePickerHeader: {
     flexDirection: "row",
