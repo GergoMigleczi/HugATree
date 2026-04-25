@@ -25,6 +25,7 @@ type GridItemBase = {
 export type GridItem =
   | (GridItemBase & {
       type: "map";
+      mode?: "public" | "adminApproval"; // forwarded to MapPreviewTile for pin filtering
       title?: string;
       subtitle?: string;
       onPress: () => void;
@@ -75,6 +76,7 @@ export function HomeGrid({ items }: Props) {
               <MapPreviewTile
                 width={width}
                 height={height}
+                mode={it.mode}
                 onPress={it.onPress}
               />
             ) : (

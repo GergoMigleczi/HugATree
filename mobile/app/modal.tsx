@@ -18,6 +18,8 @@ import { getTreeObservationsApi, uploadPhotoApi } from "@/src/features/observati
 import { getTreeWildlifeApi, createWildlifeApi } from "@/src/features/observations/observations.wildlife.api";
 import { getTreeHealthApi, createHealthApi } from "@/src/features/observations/observations.health.api";
 import { createObservation } from "@/src/features/observations/usecases/createObservation";
+import { approveEverythingUseCase } from "@/src/features/trees/usecases/approveEverything"; 
+import { rejectEverythingUseCase } from "@/src/features/trees/usecases/rejectEverything";
 import ObservationCard from "@/src/features/observations/components/ObservationCard";
 import ObservationForm from "@/src/features/observations/components/ObservationForm";
 import {
@@ -38,6 +40,8 @@ import TabBar, { type TabDef } from "@/src/ui/TabBar";
 import EmptyState from "@/src/ui/EmptyState";
 import PhotoViewer from "@/src/ui/PhotoViewer";
 import TreeQrCode from "@/src/features/trees/components/TreeQrCode";
+import { MapMode } from "@/src/features/map/map.types";
+import { useMapRefreshStore } from "@/src/features/map/map.store";
 
 /* ─── Tab definitions ──────────────────────────────────────────────────────── */
 
@@ -82,7 +86,8 @@ function healthToCard(h: HealthItem): ObservationItem {
 /* ─── Screen ───────────────────────────────────────────────────────────────── */
 
 export default function TreeModalScreen() {
-  const { treeId } = useLocalSearchParams<{ treeId: string }>();
+  const { treeId, mode: mapMode } = useLocalSearchParams<{ treeId: string; mode: MapMode }>();
+  const isApprovalMode = mapMode === "adminApproval";
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { withLoading } = useLoading();
@@ -248,6 +253,39 @@ export default function TreeModalScreen() {
     }
   }
 
+  const requestRefresh = useMapRefreshStore((s) => s.requestRefresh);
+
+  async function handleApproveAll() { 
+    if (!numericTreeId) return;
+
+    try{
+      await withLoading(
+        () => approveEverythingUseCase(numericTreeId),
+        { message: "Approving all...", blocking: true, background: "transparent" }
+      );
+      requestRefresh();
+      router.back();
+    } catch (e: any) {
+      Alert.alert("Failed to approve all", e?.message ?? "Please try again.");
+    }
+
+  }
+
+  async function handleRejectAll() {
+    if (!numericTreeId) return;
+
+    try{
+      await withLoading(
+        () => rejectEverythingUseCase(numericTreeId),
+        { message: "Rejecting all...", blocking: true, background: "transparent" }
+      );
+      requestRefresh();
+      router.back();
+    } catch (e: any) {
+      Alert.alert("Failed to reject all", e?.message ?? "Please try again.");
+    }
+  }
+
   function cancelAdd() {
     setFormData(EMPTY_OBSERVATION_FORM);
     setWildlifeForm(EMPTY_WILDLIFE_FORM);
@@ -257,7 +295,18 @@ export default function TreeModalScreen() {
 
   /* ── Header button label ────────────────────────────────────────────────── */
   function renderHeaderAction() {
-    if (mode === "add") {
+    if (isApprovalMode){
+      return (
+        <View style={{ flexDirection: "row", gap: 4 }}>
+          <Pressable onPress={handleApproveAll} style={styles.addBtn} hitSlop={8}>
+            <Text style={styles.addBtnText}>Approve All</Text>
+          </Pressable>
+          <Pressable onPress={handleRejectAll} style={styles.rejectBtn} hitSlop={8}>
+            <Text style={styles.rejectBtnText}>Reject All</Text>
+          </Pressable>
+        </View>
+      );
+    }else if (mode === "add") {
       return (
         <Pressable onPress={cancelAdd} style={styles.cancelBtn} hitSlop={8}>
           <Text style={styles.cancelBtnText}>Cancel</Text>
@@ -577,6 +626,13 @@ const styles = StyleSheet.create({
   addBtnText:    { fontSize: 12, fontWeight: "700", color: Brand.white },
   cancelBtn:     { paddingHorizontal: 12, paddingVertical: 8 },
   cancelBtnText: { fontSize: 13, fontWeight: "600", color: Brand.midGray },
+  rejectBtn:     {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: Brand.red,
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
+  },
+  rejectBtnText: { fontSize: 13, fontWeight: "600", color: Brand.white },
+
 
   listContent: { padding: 16, gap: 10, paddingBottom: 48 },
 

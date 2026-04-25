@@ -35,14 +35,6 @@ export default function AdminScreen() {
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const navigation = useNavigation();
-
-    useEffect(() => {
-    navigation.setOptions({
-        headerShown: false,
-    });
-    }, [navigation]);
-
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -60,17 +52,6 @@ export default function AdminScreen() {
     if (!isAdmin) return;
     fetchUsers();
   }, [isAdmin, fetchUsers]);
-
-  if (!isAdmin) {
-    return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: bg }]} edges={["top"]}>
-        <View style={styles.centered}>
-          <Ionicons name="lock-closed-outline" size={48} color={subCol} />
-          <Text style={[styles.emptyText, { color: subCol }]}>Admin access required</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   async function handleToggle(targetUser: AdminUser) {
     if (targetUser.id === currentUser?.id) {

@@ -21,3 +21,4 @@ export type MapRegion = {
 };
 
 export type MapLayer = "standard" | "hybrid";
+export type MapMode = "public" | "adminApproval";

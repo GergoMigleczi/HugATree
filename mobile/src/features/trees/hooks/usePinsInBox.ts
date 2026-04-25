@@ -14,8 +14,9 @@ export function usePinsInBbox(args: {
   viewport: { bbox: Bbox; region: MapRegion } | null;
   enabled: boolean;
   limit?: number;
+  mode?: "public" | "adminApproval";
 }) {
-  const { viewport, enabled, limit = 5000 } = args;
+  const { viewport, enabled, limit = 5000, mode } = args;
 
   const [state, setState] = useState<State>({ status: "idle", pins: [], error: null });
 
@@ -24,6 +25,8 @@ export function usePinsInBbox(args: {
   useEffect(() => {
     if (!enabled) return;
     if (!viewport) return;
+
+    const filter = {approvalStatus: mode === "adminApproval" ? ["pending"] : ["approved"]}; 
 
     let cancelled = false;
     setState((s) => ({ status: "loading", pins: s.pins, error: null }));
@@ -34,6 +37,7 @@ export function usePinsInBbox(args: {
                   () =>  getTreesInBbox({
                             ...viewport.bbox,
                             limit,
+                            filter
                           }),
                   { message: "Loading trees…", blocking: true, background: "transparent" }
                 );

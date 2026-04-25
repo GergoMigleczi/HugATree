@@ -26,13 +26,14 @@ interface TreeRepository
      *   limit: int
      * }
      */
-    public function findApprovedInBbox(
+    public function findTreesInBbox(
         float $minLat,
         float $minLng,
         float $maxLat,
         float $maxLng,
-        int $limit
-    ): array;
+        int $limit,
+        array $approvalStatuses = ['approved']
+    ): array;   
 
     /**
    * Get a Particular tree
@@ -53,4 +54,20 @@ interface TreeRepository
    * }
    */
     public function getATree(int $treeId): ?array;
+
+    /**
+     * Update a tree's approval status to 'approved'
+     *
+     * @param int $treeId
+     * @return void
+     */
+    public function approveTree(int $treeId): void;
+
+    /**
+     * Update a tree's approval status to 'rejected'
+     *
+     * @param int $treeId
+     * @return void
+     */
+    public function rejectTree(int $treeId): void 
 }

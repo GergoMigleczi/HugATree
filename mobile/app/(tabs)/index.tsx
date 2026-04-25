@@ -148,7 +148,7 @@ export default function HomeScreen() {
     },
   ];
 
-  if (user?.admin_flag) {
+  if (isAdmin) {
     items.push({
       type: "tile",
       id: "admin",

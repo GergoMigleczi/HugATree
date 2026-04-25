@@ -36,6 +36,7 @@ export async function getTreesInBboxApi(params: GetTreesInBboxParams): Promise<{
     maxLat: String(params.maxLat),
     maxLng: String(params.maxLng),
     limit: String(limit),
+    ...(params.filter ? { filter: JSON.stringify(params.filter) } : {}),
   }).toString();
 
   const res = await authFetch<TreesInBboxResponseApi>(`/trees?${qs}`, { method: "GET" });
@@ -60,4 +61,16 @@ export async function getTreeDetailsApi(treeId: number): Promise<TreeDetail | nu
   // API returns {} when no details exist
   if (!res || !("id" in res)) return null;
   return res as TreeDetail;
+}
+
+export async function approveEverything(treeId: number): Promise<void> {
+  await authFetch<void>(`/trees/${treeId}/approve-everything`, {
+    method: "POST",
+  });
+}
+
+export async function rejectEverything(treeId: number): Promise<void> {
+  await authFetch<void>(`/trees/${treeId}/reject-everything`, {
+    method: "POST",
+  });
 }

@@ -51,12 +51,30 @@ final class GetTreesInBbox
         $limit = $this->optionalInt($query, 'limit', 5000);
         if ($limit < 1) $limit = 1;
 
-        return $this->trees->findApprovedInBbox(
+        $filter = [];
+        if (isset($query['filter'])) {
+            $filter = json_decode($query['filter'], true);
+            if (!is_array($filter)) {
+                throw new \InvalidArgumentException('filter must be a valid JSON object');
+            }
+        }
+        $approvalStatus = [];
+        if($filter && isset($filter['approvalStatus']) && is_array($filter['approvalStatus'])) {
+            $allowedStatuses = ['approved', 'pending', 'rejected'];
+            foreach ($filter['approvalStatus'] as $status) {
+                if (in_array($status, $allowedStatuses, true)) {
+                    $approvalStatus[] = $status;
+                }
+            }
+        }
+
+        return $this->trees->findTreesInBbox(
                     $minLat,
                     $minLng,
                     $maxLat,
                     $maxLng,
-                    $limit
+                    $limit,
+                    $approvalStatus
                 );
     }
 
