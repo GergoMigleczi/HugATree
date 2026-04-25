@@ -39,6 +39,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    command: >
+      php
+      -d display_errors=1
+      -d display_startup_errors=1
+      -d error_reporting=E_ALL
+      -d log_errors=1
+      -S 0.0.0.0:8000
+      -t public
 
 volumes:
   db_data:

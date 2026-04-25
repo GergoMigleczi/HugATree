@@ -1,6 +1,16 @@
 <?php
 declare(strict_types=1);
 
+// DEV error settings (do NOT enable in prod)
+$displayErrorDetails = true; // set false in prod
+$logErrors = true;
+$logErrorDetails = true;
+
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+ini_set('log_errors', '1');
+error_reporting(E_ALL);
+
 use App\Http\Json;
 use App\Http\Routes\AuthRoutes;
 use App\Http\Routes\MeRoutes;
@@ -78,15 +88,6 @@ $app->add(function (Request $request, $handler): Response {
 });
 
 $app->addBodyParsingMiddleware();
-
-// DEV error settings (do NOT enable in prod)
-ini_set('display_errors', '0');
-ini_set('display_startup_errors', '0');
-error_reporting(E_ALL);
-
-$displayErrorDetails = true; // set false in prod
-$logErrors = true;
-$logErrorDetails = true;
 
 $app->addErrorMiddleware($displayErrorDetails, $logErrors, $logErrorDetails);
 

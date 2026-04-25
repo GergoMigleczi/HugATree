@@ -27,8 +27,9 @@ final class AuthRoutes {
         $email = (string)($body["email"] ?? "");
         $password = (string)($body["password"] ?? "");
         $displayName = isset($body["display_name"]) ? trim((string)$body["display_name"]) : null;
+        $adminFlag = isset($body["admin_flag"]) ? (bool)$body["admin_flag"] : false;
 
-        $user = $registerUser->execute($email, $password, $displayName);
+        $user = $registerUser->execute($email, $password, $displayName, $adminFlag);
         return Json::ok($res, ["user" => $user], 201);
       } catch (\InvalidArgumentException $e) {
         return Json::ok($res, ["error" => $e->getMessage()], 400);

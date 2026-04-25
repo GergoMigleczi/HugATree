@@ -7,6 +7,7 @@ export async function registerApi(params: {
   email: string;
   password: string;
   displayName: string;
+  adminFlag: boolean | false;
 }) {
   return apiRequest<RegisterResponse>("/auth/register", {
     method: "POST",
@@ -14,6 +15,7 @@ export async function registerApi(params: {
       email: params.email,
       password: params.password,
       display_name: params.displayName,
+      admin_flag: params.adminFlag,
     },
   });
 }
