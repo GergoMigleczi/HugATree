@@ -35,6 +35,7 @@ export type GetTreesInBboxParams = {
   maxLat: number;
   maxLng: number;
   limit?: number;
+  filter?: any ;
 };
 
 export type TreePin = {

@@ -68,4 +68,55 @@ final class PdoObservationRepository implements ObservationRepository
             'photoKey'   => $r['photo_key'],
         ], $rows));
     }
+
+    /**
+     * Update a observation's approval status to 'approved'
+     *
+     * @param int $observationId
+     * @return void
+     */
+    public function approveObservation(int $observationId): void {
+        $sql = "UPDATE observations SET approval_status = 'approved' WHERE id = :observationId";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':observationId', $observationId, \PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    /**
+     * Update all observation's approval status to 'approved' for a Tree
+     *
+     * @param int $treeId
+     * @return void
+     */
+    public function approveObservationsForTree(int $treeId): void {
+        $sql = "UPDATE observations SET approval_status = 'approved' WHERE tree_id = :treeId AND approval_status = 'pending'";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':treeId', $treeId, \PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    /**
+     * Update a observation's approval status to 'rejected'
+     *
+     * @param int $observationId
+     * @return void
+     */
+    public function rejectObservation(int $observationId): void {
+        $sql = "UPDATE observations SET approval_status = 'rejected' WHERE id = :observationId";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':observationId', $observationId, \PDO::PARAM_INT);
+        $stmt->execute();
+    }
+    /**
+     * Update all observation's approval status to 'rejected' for a Tree
+     *
+     * @param int $treeId
+     * @return void
+     */
+    public function rejectObservationsForTree(int $treeId): void {
+        $sql = "UPDATE observations SET approval_status = 'rejected' WHERE tree_id = :treeId AND approval_status = 'pending'";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':treeId', $treeId, \PDO::PARAM_INT);
+        $stmt->execute();
+    }
 }

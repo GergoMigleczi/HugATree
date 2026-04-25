@@ -32,6 +32,7 @@ import {
   type HealthFormData,
 } from "@/src/features/observations/observations.types";
 import { uploadPhotoApi } from "@/src/features/observations/observations.api";
+import { useMapRefreshStore } from '@/src/features/map/map.store';
 
 export default function MapRoute() {
   const router = useRouter();
@@ -50,13 +51,17 @@ export default function MapRoute() {
     viewport: searchViewport,
     enabled: true,
     limit: 5000,
+    mode: isApprovalMode ? "adminApproval" : "public",
   });
+
+  const needsRefresh = useMapRefreshStore((s) => s.needsRefresh);
+  const clearRefresh = useMapRefreshStore((s) => s.clearRefresh);
 
   const [mapLayer, setMapLayer] = useState<MapLayer>("standard");
 
   const pins = pinsState.pins;
 
-  const onPinPress = usePinPress();
+  const onPinPress = usePinPress(isApprovalMode ? "adminApproval" : "public");
 
   const loc = useLiveLocation();
   const userLocation = loc.status === "success" ? loc.location : null;
@@ -195,6 +200,16 @@ export default function MapRoute() {
       setSubmitting(false);
     }
   }
+
+  useEffect(() => {
+    if (!needsRefresh) return;
+    if (!viewport) return;
+
+    setSearchViewport(viewport);
+    setShowSearchHere(false);
+
+    clearRefresh();
+  }, [needsRefresh, clearRefresh]);
 
   useEffect(() => {
     if (didAutoSearch.current) return;

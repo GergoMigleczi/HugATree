@@ -13,6 +13,7 @@ type LatLng = { latitude: number; longitude: number };
 type Props = {
   width: number;
   height: number;
+  mode?: "public" | "adminApproval";
   onPress: () => void;
 };
 
@@ -22,7 +23,7 @@ function distanceApproxMeters(a: LatLng, b: LatLng) {
   return Math.sqrt(dLat * dLat + dLng * dLng);
 }
 
-export function MapPreviewTile({ width, height, onPress }: Props) {
+export function MapPreviewTile({ width, height, mode, onPress }: Props) {
   const loc = useLiveLocation();
   const userLocation = loc.status === "success" ? loc.location : null;
 
@@ -51,6 +52,7 @@ export function MapPreviewTile({ width, height, onPress }: Props) {
     viewport: searchViewport,
     enabled: true,
     limit: 5000,
+    mode: mode,
   });
 
   // MapImpl expects Pin[] (your map Pin type) — if TreePin differs, map here.

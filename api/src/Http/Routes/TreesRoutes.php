@@ -15,6 +15,10 @@ use App\Application\UseCase\GetTreeWildlife;
 use App\Application\UseCase\CreateWildlife;
 use App\Application\UseCase\GetTreeHealth;
 use App\Application\UseCase\CreateHealth;
+use App\Application\UseCase\ApproveTree;
+use App\Application\UseCase\ApproveEverythingForTree;
+use App\Application\UseCase\RejectTree;
+use App\Application\UseCase\RejectEverythingForTree;
 use App\Http\Json;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -130,6 +134,7 @@ final class TreesRoutes
                 return Json::ok($res, ['error' => 'Unexpected server error'], 500);
             }
         });
+   
     }
 
     public static function registerPublic($routes,
@@ -200,7 +205,11 @@ final class TreesRoutes
         CreateTree $createTree,
         GetTreeObservations $getTreeObservations,
         AddObservation $addObservation,
-        GetTreeDetails $getTreeDetails
+        GetTreeDetails $getTreeDetails,
+        ApproveTree $approveTree,
+        ApproveEverythingForTree $approveEverythingForTree,
+        RejectTree $rejectTree,
+        RejectEverythingForTree $rejectEverythingForTree
     ): void
     {
         // GET /trees/:id/details (JWT required)
@@ -285,6 +294,93 @@ final class TreesRoutes
                 return Json::ok($res, ['error' => $e->getMessage()], 422);
             } catch (\Throwable $e) {
                 error_log('[POST /trees] ' . $e->getMessage());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+
+        // POST /trees/:id/approve (JWT required)
+        $routes->post('/trees/{id}/approve', function (Request $req, Response $res, array $args) use ($approveTree) {
+            $claims = $req->getAttribute('auth');
+            if (!is_array($claims) || empty($claims['sub'])) {
+                return Json::ok($res, ['error' => 'Unauthenticated'], 401);
+            }
+
+            $treeId = (int)($args['id'] ?? 0);
+            if ($treeId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid tree id'], 400);
+            }
+            try {
+                $approveTree->execute($treeId);
+                return Json::ok($res, ['ok' => true], 200);
+            } catch (\InvalidArgumentException $e) {
+                return Json::ok($res, ['error' => $e->getMessage()], 422);
+            } catch (\Throwable $e) {
+                error_log('[POST /trees/' . $treeId . '/approve] ' . $e->getMessage());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+
+        // POST /trees/:id/approve-everything (JWT required)
+        $routes->post('/trees/{id}/approve-everything', function (Request $req, Response $res, array $args) use ($approveEverythingForTree) {
+            $claims = $req->getAttribute('auth');
+            if (!is_array($claims) || empty($claims['sub'])) {
+                return Json::ok($res, ['error' => 'Unauthenticated'], 401);
+            }
+
+            $treeId = (int)($args['id'] ?? 0);
+            if ($treeId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid tree id'], 400);
+            }
+            try {
+                $approveEverythingForTree->execute($treeId);
+                return Json::ok($res, ['ok' => true], 200);
+            } catch (\InvalidArgumentException $e) {
+                return Json::ok($res, ['error' => $e->getMessage()], 422);
+            } catch (\Throwable $e) {
+                error_log('[POST /trees/' . $treeId . '/approveEverything] ' . $e->getMessage());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+
+        // POST /trees/:id/reject (JWT required)
+        $routes->post('/trees/{id}/reject', function (Request $req, Response $res, array $args) use ($rejectTree) {
+            $claims = $req->getAttribute('auth');
+            if (!is_array($claims) || empty($claims['sub'])) {
+                return Json::ok($res, ['error' => 'Unauthenticated'], 401);
+            }
+
+            $treeId = (int)($args['id'] ?? 0);
+            if ($treeId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid tree id'], 400);
+            }
+            try {
+                $rejectTree->execute($treeId);
+                return Json::ok($res, ['ok' => true], 200);
+            } catch (\InvalidArgumentException $e) {
+                return Json::ok($res, ['error' => $e->getMessage()], 422);
+            } catch (\Throwable $e) {
+                error_log('[POST /trees/' . $treeId . '/reject] ' . $e->getMessage());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+
+        // POST /trees/:id/reject-everything (JWT required)
+        $routes->post('/trees/{id}/reject-everything', function (Request $req, Response $res, array $args) use ($rejectEverythingForTree) {
+            $claims = $req->getAttribute('auth');
+            if (!is_array($claims) || empty($claims['sub'])) {
+                return Json::ok($res, ['error' => 'Unauthenticated'], 401);
+            }
+            $treeId = (int)($args['id'] ?? 0);
+            if ($treeId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid tree id'], 400);
+            }
+            try {
+                $rejectEverythingForTree->execute($treeId);
+                return Json::ok($res, ['ok' => true], 200);
+            } catch (\InvalidArgumentException $e) {
+                return Json::ok($res, ['error' => $e->getMessage()], 422);
+            } catch (\Throwable $e) {
+                error_log('[POST /trees/' . $treeId . '/rejectEverything] ' . $e->getMessage());
                 return Json::ok($res, ['error' => 'Unexpected server error'], 500);
             }
         });

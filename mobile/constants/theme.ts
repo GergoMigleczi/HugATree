@@ -28,6 +28,7 @@ export const Brand = {
   // Earthy amber accent (sun/trunk tones from the logo)
   amber:     '#D4A017',
   amberLight:'#F4C842',
+  red: '#FF746C',
 
   // Neutrals
   charcoal:  '#1C2721',

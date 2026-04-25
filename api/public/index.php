@@ -59,6 +59,10 @@ use App\Application\UseCase\CreateWildlife;
 use App\Application\UseCase\GetTreeHealth;
 use App\Application\UseCase\CreateHealth;
 use App\Application\UseCase\SetUserActive;
+use App\Application\UseCase\ApproveTree;
+use App\Application\UseCase\ApproveEverythingForTree;
+use App\Application\UseCase\RejectTree; 
+use App\Application\UseCase\RejectEverythingForTree;
 
 use Dotenv\Dotenv;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -146,7 +150,10 @@ $getTreeWildlife = new GetTreeWildlife($wildlifeRepo);
 $createWildlife = new CreateWildlife($tx, $addObservation, $wildlifeRepo);
 $getTreeHealth = new GetTreeHealth($healthRepo);
 $createHealth = new CreateHealth($tx, $addObservation, $healthRepo);
-
+$approveTree = new ApproveTree($treeRepo);
+$approveEverythingForTree = new ApproveEverythingForTree($treeRepo, $observationRepo);
+$rejectTree = new RejectTree($treeRepo);
+$rejectEverythingForTree = new RejectEverythingForTree($treeRepo, $observationRepo);
 // --- routes ---
 $app->get("/health", function (Request $req, Response $res) use ($pdo) {
   $pdo->query("SELECT 1");
@@ -163,8 +170,8 @@ TreesRoutes::registerPublic($app, $getTreesInBbox, $getSpecies, $getTree);
 PhotoRoutes::registerPublic($app, $fileStorage);
 
 // Protected endpoints (JWT required)
-$app->group('', function ($group) use ($createTree, $getTreeObservations, $addObservation, $getTreeDetails, $uploadPhoto, $getTreeWildlife, $createWildlife, $getTreeHealth, $createHealth) {
-  TreesRoutes::registerProtected($group, $createTree, $getTreeObservations, $addObservation, $getTreeDetails);
+$app->group('', function ($group) use ($createTree, $getTreeObservations, $addObservation, $getTreeDetails, $uploadPhoto, $getTreeWildlife, $createWildlife, $getTreeHealth, $createHealth, $approveTree, $approveEverythingForTree, $rejectTree, $rejectEverythingForTree) {
+  TreesRoutes::registerProtected($group, $createTree, $getTreeObservations, $addObservation, $getTreeDetails, $approveTree, $approveEverythingForTree, $rejectTree, $rejectEverythingForTree);
   TreesRoutes::registerWildlifeHealthProtected($group, $getTreeWildlife, $createWildlife, $getTreeHealth, $createHealth);
   PhotoRoutes::registerProtected($group, $uploadPhoto);
 })->add(new AuthMiddleware());

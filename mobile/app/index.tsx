@@ -20,7 +20,7 @@ async function DefaultLogins() {
 
   try {
     await register('admin@email.com', 'admin123!', 'Admin_User', true);
-    await logout();
+    //await logout();
   } catch (e: any) {
     if (e.message !== 'Email already in use') throw e;
     console.log('Default admin user already exists, skipping registration.');

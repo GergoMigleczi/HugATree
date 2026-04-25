@@ -39,14 +39,6 @@ export default function AdminHomeScreen() {
   const subCol = isDark ? Brand.softGray : Brand.midGray;
   const borderCl = isDark ? Brand.deep : Brand.pale;
 
-  const navigation = useNavigation();
-
-    useEffect(() => {
-    navigation.setOptions({
-        headerShown: false,
-    });
-    }, [navigation]);
-
   const firstName = user?.display_name?.split(" ")[0] ?? "Admin";
 
   const items: GridItem[] = [
@@ -55,6 +47,7 @@ export default function AdminHomeScreen() {
       id: "admin-map-preview",
       cols: 2,
       rows: 1,
+      mode: "adminApproval", // forwarded to MapPreviewTile for pin filtering
       onPress: () => router.push({
         pathname: "/map",
         params: { mode: "adminApproval" },

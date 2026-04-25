@@ -65,12 +65,13 @@ final class PdoTreeRepository implements TreeRepository
    *   limit: int
    * }
    */
-  public function findApprovedInBbox(
+  public function findTreesInBbox(
   float $minLat,
   float $minLng,
   float $maxLat,
   float $maxLng,
-  int $limit
+  int $limit,
+  array $approvalStatus = ['approved']
   ): array {
       $limit = max(1, min(5000, $limit));
 
@@ -82,8 +83,8 @@ final class PdoTreeRepository implements TreeRepository
       $countSql = "
         SELECT COUNT(*)::int AS total
         FROM trees t
-        WHERE /*t.approval_status = 'approved'
-          AND*/ t.location && $envelopeSql
+        WHERE t.approval_status IN ('" . implode("', '", $approvalStatus) . "')
+          AND t.location && $envelopeSql
           AND ST_Intersects(t.location, $envelopeSql)
       ";
 
@@ -106,8 +107,8 @@ final class PdoTreeRepository implements TreeRepository
           t.location_lng
         FROM trees t
         LEFT JOIN species s ON s.id = t.species_id
-        WHERE /*t.approval_status = 'approved'
-          AND*/ t.location && $envelopeSql
+        WHERE t.approval_status IN ('" . implode("', '", $approvalStatus) . "')
+          AND t.location && $envelopeSql
           AND ST_Intersects(t.location, $envelopeSql)
         ORDER BY t.id
         LIMIT :limit
@@ -194,6 +195,32 @@ final class PdoTreeRepository implements TreeRepository
         'addressText' => $rows[0]['address_text'],
         'adoptedBy' => $rows[0]['adopted_by']
       ];
+  }
+
+  /**
+     * Update a tree's approval status to 'approved'
+     *
+     * @param int $treeId
+     * @return void
+     */
+  public function approveTree(int $treeId): void {
+    $sql = "UPDATE trees SET approval_status = 'approved' WHERE id = :treeId";
+    $stmt = $this->pdo->prepare($sql);
+    $stmt->bindValue(':treeId', $treeId, \PDO::PARAM_INT);
+    $stmt->execute();
+  }
+
+  /**
+     * Update a tree's approval status to 'rejected'
+     *
+     * @param int $treeId
+     * @return void
+     */
+  public function rejectTree(int $treeId): void {
+    $sql = "UPDATE trees SET approval_status = 'rejected' WHERE id = :treeId";
+    $stmt = $this->pdo->prepare($sql);
+    $stmt->bindValue(':treeId', $treeId, \PDO::PARAM_INT);
+    $stmt->execute();
   }
 
 }
