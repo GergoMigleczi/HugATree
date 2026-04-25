@@ -23,6 +23,18 @@ final class PdoUserRepository implements UserRepository {
     return $row ?: null;
   }
 
+  public function findAll(): array {
+    $stmt = $this->pdo->query("SELECT id, email, display_name, is_active, admin_flag, created_at, updated_at FROM users ORDER BY created_at DESC");
+    return $stmt->fetchAll();
+  }
+
+  public function setActive(int $id, bool $active): void {
+    $stmt = $this->pdo->prepare("UPDATE users SET is_active = :active, updated_at = NOW() WHERE id = :id");
+    $stmt->bindValue(':active', $active, PDO::PARAM_BOOL);
+    $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+    $stmt->execute();
+  }
+
   public function create(string $email, string $passwordHash, ?string $displayName, ?bool $adminFlag = false): array {
     $stmt = $this->pdo->prepare("
       INSERT INTO users (email, password_hash, display_name, admin_flag)
