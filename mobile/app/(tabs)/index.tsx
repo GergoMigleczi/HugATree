@@ -159,6 +159,20 @@ export default function HomeScreen() {
     }] : []),
   ];
 
+  if (user?.admin_flag) {
+    items.push({
+      type: "tile",
+      id: "admin",
+      title: "Admin Panel",
+      subtitle: "Manage users & data",
+      cols: 2,
+      rows: 1,
+      icon: "shield-checkmark-outline",
+      accent: ACCENTS.forest,
+      onPress: () => router.push("/(admin)"),
+    });
+}
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]} edges={["top"]}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
