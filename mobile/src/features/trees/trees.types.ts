@@ -38,6 +38,10 @@ export type GetTreesInBboxParams = {
   filter?: any ;
 };
 
+export type getTreeDetailParams = {
+  filter?: any;
+};
+
 export type TreePin = {
   id: number;
   latitude: number;
@@ -140,7 +144,7 @@ export type CreateTreeResponseApi = {
 ========================= */
 export type TreeDetail = {
   id: number;
-  observationId: number;
+  observationId: number | null;
   probableAgeYears: number | null;
   ageBasis: string | null;
   heightM: number | null;
@@ -152,8 +156,14 @@ export type TreeDetail = {
   canopyDensity: string | null;
   recordedAt: string | null;
   recordedByName: string | null;
-  estimatedCo2SequesteredYearKg: number | null;
+
   estimatedCo2StoredKg: number | null;
+  estimatedCo2SequesteredYearKg: number | null;
   estimatedWaterUseYearL: number | null;
+  weatherPeriodStart: string | null;
+  weatherPeriodEnd: string | null;
+  weatherSource: string | null;
+  calculationMethodVersion: string | null;
   calculatedAt: string | null;
+  approvalStatus: string;
 };

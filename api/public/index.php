@@ -51,6 +51,7 @@ use App\Application\UseCase\GetTreesInBbox;
 use App\Application\UseCase\GetSpecies;
 use App\Application\UseCase\GetTreeObservations;
 use App\Application\UseCase\AddObservation;
+use App\Application\UseCase\GetLatestTreeDetails;
 use App\Application\UseCase\GetTreeDetails;
 use App\Application\UseCase\GetTree;
 use App\Application\UseCase\GetWildlifeSpecies;
@@ -61,8 +62,12 @@ use App\Application\UseCase\CreateHealth;
 use App\Application\UseCase\SetUserActive;
 use App\Application\UseCase\ApproveTree;
 use App\Application\UseCase\ApproveEverythingForTree;
+use App\Application\UseCase\ApproveObservation;
+use App\Application\UseCase\ApproveTreeDetail;
 use App\Application\UseCase\RejectTree; 
 use App\Application\UseCase\RejectEverythingForTree;
+use App\Application\UseCase\RejectObservation;
+use App\Application\UseCase\RejectTreeDetail;
 
 use Dotenv\Dotenv;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -137,6 +142,7 @@ $getTreesInBbox = new GetTreesInBbox($treeRepo);
 $getSpecies = new GetSpecies($speciesRepo);
 $getTreeObservations = new GetTreeObservations($observationRepo);
 $addObservation = new AddObservation($tx, $observationRepo, $photoRepo, $treeDetailRepo, $treeRepo, $metricsCalculator, $weatherSummaryService);
+$getLatestTreeDetails = new GetLatestTreeDetails($treeDetailRepo);
 $getTreeDetails = new GetTreeDetails($treeDetailRepo);
 $getTree = new GetTree($treeRepo, $treeDetailRepo);
 $createTree = new CreateTree(
@@ -151,9 +157,14 @@ $createWildlife = new CreateWildlife($tx, $addObservation, $wildlifeRepo);
 $getTreeHealth = new GetTreeHealth($healthRepo);
 $createHealth = new CreateHealth($tx, $addObservation, $healthRepo);
 $approveTree = new ApproveTree($treeRepo);
-$approveEverythingForTree = new ApproveEverythingForTree($treeRepo, $observationRepo);
+$approveEverythingForTree = new ApproveEverythingForTree($treeRepo, $observationRepo, $photoRepo, $treeDetailRepo);
+$approveObservation = new ApproveObservation($observationRepo, $photoRepo);
+$approveTreeDetail = new ApproveTreeDetail($treeDetailRepo);
 $rejectTree = new RejectTree($treeRepo);
-$rejectEverythingForTree = new RejectEverythingForTree($treeRepo, $observationRepo);
+$rejectEverythingForTree = new RejectEverythingForTree($treeRepo, $observationRepo, $photoRepo, $treeDetailRepo);
+$rejectObservation = new RejectObservation($observationRepo, $photoRepo);
+$rejectTreeDetail = new RejectTreeDetail($treeDetailRepo);
+
 // --- routes ---
 $app->get("/health", function (Request $req, Response $res) use ($pdo) {
   $pdo->query("SELECT 1");
@@ -170,8 +181,8 @@ TreesRoutes::registerPublic($app, $getTreesInBbox, $getSpecies, $getTree);
 PhotoRoutes::registerPublic($app, $fileStorage);
 
 // Protected endpoints (JWT required)
-$app->group('', function ($group) use ($createTree, $getTreeObservations, $addObservation, $getTreeDetails, $uploadPhoto, $getTreeWildlife, $createWildlife, $getTreeHealth, $createHealth, $approveTree, $approveEverythingForTree, $rejectTree, $rejectEverythingForTree) {
-  TreesRoutes::registerProtected($group, $createTree, $getTreeObservations, $addObservation, $getTreeDetails, $approveTree, $approveEverythingForTree, $rejectTree, $rejectEverythingForTree);
+$app->group('', function ($group) use ($createTree, $getTreeObservations, $addObservation, $getLatestTreeDetails, $getTreeDetails, $uploadPhoto, $getTreeWildlife, $createWildlife, $getTreeHealth, $createHealth, $approveTree, $approveEverythingForTree, $rejectTree, $rejectEverythingForTree, $approveObservation, $approveTreeDetail, $rejectObservation, $rejectTreeDetail) {
+  TreesRoutes::registerProtected($group, $createTree, $getTreeObservations, $addObservation, $getLatestTreeDetails, $getTreeDetails, $approveTree, $approveEverythingForTree, $approveObservation, $approveTreeDetail, $rejectTree, $rejectEverythingForTree, $rejectObservation, $rejectTreeDetail);
   TreesRoutes::registerWildlifeHealthProtected($group, $getTreeWildlife, $createWildlife, $getTreeHealth, $createHealth);
   PhotoRoutes::registerProtected($group, $uploadPhoto);
 })->add(new AuthMiddleware());

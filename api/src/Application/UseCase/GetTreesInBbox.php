@@ -68,13 +68,19 @@ final class GetTreesInBbox
             }
         }
 
+        $hasPending = false;
+        if ($filter && isset($filter['hasPending'])) {
+            $hasPending = $filter['hasPending'] === true;
+        }
+
         return $this->trees->findTreesInBbox(
                     $minLat,
                     $minLng,
                     $maxLat,
                     $maxLng,
                     $limit,
-                    $approvalStatus
+                    $approvalStatus,
+                    $hasPending
                 );
     }
 

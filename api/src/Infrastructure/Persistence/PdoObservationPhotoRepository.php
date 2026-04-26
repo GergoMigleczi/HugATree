@@ -29,4 +29,74 @@ final class PdoObservationPhotoRepository implements ObservationPhotoRepository
 
         return (int)$stmt->fetchColumn();
     }
+
+    /**
+     * Update all photos' approval status to 'approved' for a Tree
+     *
+     * @param int $treeId
+     * @return void
+     */
+    public function approvePhotosForTree(int $treeId): void {
+        $sql = "UPDATE observation_photos op
+            SET approval_status = 'approved'
+            WHERE observation_id
+            IN (SELECT id FROM observations WHERE tree_id = :treeId)
+            AND approval_status = 'pending'";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':treeId', $treeId, \PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    /**
+     * Update all photos' approval status to 'approved' for an observation
+     *
+     * @param int $observationId
+     * @return void
+     */
+    public function approvePhotosForObservation(int $observationId): void {
+        $sql = "UPDATE observation_photos op
+            SET approval_status = 'approved'
+            WHERE observation_id = :observationId
+            AND approval_status = 'pending'";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':observationId', $observationId, \PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    /**
+     * Update all photos' approval status to 'rejected' for a Tree
+     *
+     * @param int $treeId
+     * @return void
+     */
+    public function rejectPhotosForTree(int $treeId): void {
+        $sql = "UPDATE observation_photos
+        SET approval_status = 'rejected'
+        WHERE observation_id
+        IN (SELECT id FROM observations WHERE tree_id = :treeId)
+        AND approval_status = 'pending'";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':treeId', $treeId, \PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    /**
+     * Update all photos' approval status to 'rejected' for an observation
+     *
+     * @param int $observationId
+     * @return void
+     */
+    public function rejectPhotosForObservation(int $observationId): void {
+        $sql = "UPDATE observation_photos op
+            SET approval_status = 'rejected'
+            WHERE observation_id = :observationId
+            AND approval_status = 'pending'";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':observationId', $observationId, \PDO::PARAM_INT);
+        $stmt->execute();
+    }
 }

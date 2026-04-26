@@ -71,7 +71,8 @@ final class PdoTreeRepository implements TreeRepository
   float $maxLat,
   float $maxLng,
   int $limit,
-  array $approvalStatus = ['approved']
+  array $approvalStatus = ['approved'],
+  bool $includePending = false
   ): array {
       $limit = max(1, min(5000, $limit));
 
@@ -79,13 +80,44 @@ final class PdoTreeRepository implements TreeRepository
       // MakeEnvelope expects (minX, minY, maxX, maxY) = (minLng, minLat, maxLng, maxLat)
       $envelopeSql = "ST_MakeEnvelope(:minLng, :minLat, :maxLng, :maxLat, 4326)";
 
+      $whereSql = "
+        t.location && $envelopeSql
+        AND ST_Intersects(t.location, $envelopeSql)
+      ";
+
+      $pendingCondition = "
+        (
+          t.approval_status = 'pending'
+          OR EXISTS (
+            SELECT 1
+            FROM observations o
+            WHERE o.tree_id = t.id
+              AND o.approval_status = 'pending'
+          )
+          OR EXISTS (
+            SELECT 1
+            FROM tree_detail_history tdh
+            WHERE tdh.tree_id = t.id
+              AND tdh.approval_status = 'pending'
+          )
+        )
+      ";
+
+      if ($includePending) {
+        $whereSql .= "
+          AND $pendingCondition
+        ";
+    } elseif ($approvalStatus !== []) {
+        $whereSql .= "
+          AND t.approval_status IN ('" . implode("', '", $approvalStatus) . "')
+        ";
+    }
+
       // 1) Total count (ignores limit)
       $countSql = "
         SELECT COUNT(*)::int AS total
         FROM trees t
-        WHERE t.approval_status IN ('" . implode("', '", $approvalStatus) . "')
-          AND t.location && $envelopeSql
-          AND ST_Intersects(t.location, $envelopeSql)
+        WHERE $whereSql
       ";
 
       $countStmt = $this->pdo->prepare($countSql);
@@ -104,12 +136,11 @@ final class PdoTreeRepository implements TreeRepository
           t.species_id,
           COALESCE(s.common_name, t.custom_species_name) AS species_common_name,
           t.location_lat,
-          t.location_lng
+          t.location_lng,
+          t.approval_status
         FROM trees t
         LEFT JOIN species s ON s.id = t.species_id
-        WHERE t.approval_status IN ('" . implode("', '", $approvalStatus) . "')
-          AND t.location && $envelopeSql
-          AND ST_Intersects(t.location, $envelopeSql)
+        WHERE $whereSql
         ORDER BY t.id
         LIMIT :limit
       ";
@@ -132,6 +163,7 @@ final class PdoTreeRepository implements TreeRepository
               'speciesCommonName' => $r['species_common_name'] !== null ? (string)$r['species_common_name'] : null,
               'lat' => (float)$r['location_lat'],
               'lng' => (float)$r['location_lng'],
+              'approvalStatus' => $r['approval_status'],
           ];
       }, $rows);
 
@@ -158,6 +190,7 @@ final class PdoTreeRepository implements TreeRepository
    *     plantedBy: varchar,
    *     addressText: varchar,
    *     adoptedBy: varchar,
+   *     approvalStatus: string,
    * }
    */
   public function getATree(
@@ -173,6 +206,7 @@ final class PdoTreeRepository implements TreeRepository
         t.planted_at,
         t.planted_by,
         t.address_text,
+        t.approval_status,
         (SELECT u.display_name FROM users u WHERE u.id = t.adopted_by_user_id) AS adopted_by
       FROM trees t
       LEFT JOIN species s ON s.id = t.species_id
@@ -193,7 +227,8 @@ final class PdoTreeRepository implements TreeRepository
         'plantedAt' => $rows[0]['planted_at'],
         'plantedBy' => $rows[0]['planted_by'],
         'addressText' => $rows[0]['address_text'],
-        'adoptedBy' => $rows[0]['adopted_by']
+        'adoptedBy' => $rows[0]['adopted_by'],
+        'approvalStatus' => $rows[0]['approval_status']
       ];
   }
 

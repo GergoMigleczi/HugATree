@@ -69,5 +69,5 @@ interface TreeRepository
      * @param int $treeId
      * @return void
      */
-    public function rejectTree(int $treeId): void 
+    public function rejectTree(int $treeId): void;
 }

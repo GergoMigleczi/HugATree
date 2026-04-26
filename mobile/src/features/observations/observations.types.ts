@@ -136,6 +136,7 @@ export type ObservationItem = {
   createdAt: string;
   authorName: string | null;
   photoKey: string | null; // storage key of the first attached photo, if any
+  approvalStatus: "approved" | "rejected" | "pending";
 };
 
 // Response from POST /trees/:id/observations

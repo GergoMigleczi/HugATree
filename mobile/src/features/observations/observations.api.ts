@@ -52,8 +52,13 @@ export async function uploadPhotoApi(localUri: string): Promise<string> {
  * Returns observations sorted: initial (first-ever) first, then by observed_at ASC.
  * photoKey is resolved to a full URL so ObservationCard can pass it directly to <Image>.
  */
-export async function getTreeObservationsApi(treeId: number): Promise<ObservationItem[]> {
-  const items = await authFetch<ObservationItem[]>(`/trees/${treeId}/observations`, { method: "GET" });
+export async function getTreeObservationsApi(treeId: number, params: Record<string, unknown>): Promise<ObservationItem[]> {
+  
+  const qs = new URLSearchParams({
+    ...(params.filter ? { filter: JSON.stringify(params.filter) } : {}),
+  }).toString();
+
+  const items = await authFetch<ObservationItem[]>(`/trees/${treeId}/observations?${qs}`, { method: "GET" });
   return items.map((item) => ({
     ...item,
     photoKey: item.photoKey ? `${API_URL}/photos/${item.photoKey.split("/").pop()}` : null,
@@ -80,5 +85,17 @@ export async function createObservationApi(
       ...(details ? { details } : {}),
       ...(photoKeys.length > 0 ? { photoKeys } : {}),
     },
+  });
+}
+
+export async function approveObservationApi(treeId: number, observationId: number): Promise<void> {
+  await authFetch<void>(`/trees/${treeId}/observations/${observationId}/approve`, {
+    method: "POST",
+  });
+}
+
+export async function rejectObservationApi(treeId: number, observationId: number): Promise<void> {
+  await authFetch<void>(`/trees/${treeId}/observations/${observationId}/reject`, {
+    method: "POST",
   });
 }

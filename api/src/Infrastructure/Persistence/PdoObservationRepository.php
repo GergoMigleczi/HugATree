@@ -34,7 +34,8 @@ final class PdoObservationRepository implements ObservationRepository
         return (int)$stmt->fetchColumn();
     }
 
-    public function listByTreeId(int $treeId): array
+    public function listByTreeId(int $treeId,
+        array $approvalStatus = ['approved']): array
     {
         $sql = "
             SELECT
@@ -47,10 +48,12 @@ final class PdoObservationRepository implements ObservationRepository
                 (SELECT op.storage_key
                  FROM observation_photos op
                  WHERE op.observation_id = o.id
-                 ORDER BY op.id ASC LIMIT 1) AS photo_key
+                 ORDER BY op.id ASC LIMIT 1) AS photo_key,
+                o.approval_status
             FROM observations o
             LEFT JOIN users u ON u.id = o.created_by_user_id
             WHERE o.tree_id = :tree_id
+            AND o.approval_status IN ('" . implode("', '", $approvalStatus) . "')
             ORDER BY o.created_at ASC
         ";
 
@@ -66,6 +69,7 @@ final class PdoObservationRepository implements ObservationRepository
             'createdAt'  => $r['created_at'],
             'authorName' => $r['author_name'],
             'photoKey'   => $r['photo_key'],
+            'approvalStatus' => $r['approval_status']
         ], $rows));
     }
 

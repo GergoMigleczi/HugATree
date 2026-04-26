@@ -11,9 +11,11 @@ type Props = {
   isInitial: boolean;
   /** Called with the photo URL when the thumbnail is tapped. */
   onPhotoPress?: (uri: string) => void;
+  handleApprove?: (observationId: number) => void;
+  handleReject?: (observationId: number) => void;
 };
 
-export default function ObservationCard({ item, isInitial, onPhotoPress }: Props) {
+export default function ObservationCard({ item, isInitial, onPhotoPress, handleApprove, handleReject }: Props) {
   const [imgLoading, setImgLoading] = useState(false);
   const [imgError,   setImgError]   = useState(false);
 
@@ -93,6 +95,20 @@ export default function ObservationCard({ item, isInitial, onPhotoPress }: Props
           ) : null}
         </View>
       </View>
+
+      {item.approvalStatus === "pending" && (
+        <View >
+          <View style={styles.pendingActions}>
+            <Pressable onPress={handleApprove ? () => handleApprove(item.id) : undefined} style={styles.iconBtn}>
+              <Ionicons name="checkmark" size={18} color={Brand.white} />
+            </Pressable>
+
+            <Pressable onPress={handleReject ? () => handleReject(item.id) : undefined} style={styles.iconRejectBtn}>
+              <Ionicons name="close" size={18} color={Brand.white} />
+            </Pressable>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -175,4 +191,26 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Brand.softGray,
   },
+
+  pendingActions: {
+  gap: 2,
+},
+iconBtn: {
+  width: 32,
+  height: 32,
+  borderRadius: 16,
+  backgroundColor: Brand.primary,
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+iconRejectBtn: {
+  width: 32,
+  height: 32,
+  borderRadius: 16,
+  backgroundColor: Brand.red,
+  alignItems: "center",
+  justifyContent: "center",
+},
+
 });
