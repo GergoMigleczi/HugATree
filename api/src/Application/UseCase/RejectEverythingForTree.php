@@ -5,12 +5,16 @@ namespace App\Application\UseCase;
 
 use App\Application\Ports\TreeRepository;
 use App\Application\Ports\ObservationRepository;
+use App\Application\Ports\ObservationPhotoRepository;
+use App\Application\Ports\TreeDetailsRepository;
 
 final class RejectEverythingForTree
 {
     public function __construct(
         private TreeRepository $treeRepository,
         private ObservationRepository $observationRepository,
+        private ObservationPhotoRepository $observationPhotoRepository, 
+        private TreeDetailsRepository $treeDetailsRepository,
     ) {}
 
     /**
@@ -30,7 +34,11 @@ final class RejectEverythingForTree
 
         // 2. Reject all pending observations for this tree
         $this->observationRepository->rejectObservationsForTree($treeId);
+
+        // 3. Reject all pending photos for this tree
+        $this->observationPhotoRepository->rejectPhotosForTree($treeId);
         
-        // 3. Reject all pending health records for this tree
+        // 4. Reject all pending tree detail records for this tree
+        $this->treeDetailsRepository->rejectTreeDetailsForTree($treeId);
     }
 }

@@ -151,9 +151,9 @@ $createWildlife = new CreateWildlife($tx, $addObservation, $wildlifeRepo);
 $getTreeHealth = new GetTreeHealth($healthRepo);
 $createHealth = new CreateHealth($tx, $addObservation, $healthRepo);
 $approveTree = new ApproveTree($treeRepo);
-$approveEverythingForTree = new ApproveEverythingForTree($treeRepo, $observationRepo);
+$approveEverythingForTree = new ApproveEverythingForTree($treeRepo, $observationRepo, $photoRepo, $treeDetailRepo);
 $rejectTree = new RejectTree($treeRepo);
-$rejectEverythingForTree = new RejectEverythingForTree($treeRepo, $observationRepo);
+$rejectEverythingForTree = new RejectEverythingForTree($treeRepo, $observationRepo, $photoRepo, $treeDetailRepo);
 // --- routes ---
 $app->get("/health", function (Request $req, Response $res) use ($pdo) {
   $pdo->query("SELECT 1");

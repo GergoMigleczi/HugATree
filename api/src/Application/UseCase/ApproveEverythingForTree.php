@@ -5,12 +5,16 @@ namespace App\Application\UseCase;
 
 use App\Application\Ports\TreeRepository;
 use App\Application\Ports\ObservationRepository;
+use App\Application\Ports\ObservationPhotoRepository;
+use App\Application\Ports\TreeDetailsRepository;
 
 final class ApproveEverythingForTree
 {
     public function __construct(
         private TreeRepository $treeRepository,
         private ObservationRepository $observationRepository,
+        private ObservationPhotoRepository $observationPhotoRepository,
+        private TreeDetailsRepository $treeDetailsRepository,
     ) {}
 
     /**
@@ -31,6 +35,10 @@ final class ApproveEverythingForTree
         // 2. Approve all pending observations for this tree
         $this->observationRepository->approveObservationsForTree($treeId);
 
-        // 3. Approve all pending health records for this tree
+        // 3. Approve all pending photos for this tree
+        $this->observationPhotoRepository->approvePhotosForTree($treeId);
+        
+        // 4. Approve all pending tree detail records for this tree
+        $this->treeDetailsRepository->approveTreeDetailsForTree($treeId);
     }
 }

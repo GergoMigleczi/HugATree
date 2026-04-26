@@ -139,4 +139,56 @@ final class PdoTreeDetailHistoryRepository implements TreeDetailHistoryRepositor
             'calculatedAt' => $row['calculated_at'],
         ];
     }
+
+    /**
+     * Update a treeDetail's approval status to 'approved'
+     *
+     * @param int $treeDetailId
+     * @return void
+     */
+    public function approveTreeDetail(int $treeDetailId): void {
+        $sql = "UPDATE tree_detail_history SET approval_status = 'approved' WHERE id = :treeDetailId";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':treeDetailId', $treeDetailId, \PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    /**
+     * Update all treeDetails' approval status to 'approved' for a Tree
+     *
+     * @param int $treeId
+     * @return void
+     */
+    public function approveTreeDetailsForTree(int $treeId): void {
+        $sql = "UPDATE tree_detail_history SET approval_status = 'approved' WHERE tree_id = :treeId";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':treeId', $treeId, \PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    /**
+     * Update a treeDetail's approval status to 'rejected'
+     *
+     * @param int $treeDetailId
+     * @return void
+     */
+    public function rejectTreeDetail(int $treeDetailId): void {
+        $sql = "UPDATE tree_detail_history SET approval_status = 'rejected' WHERE id = :treeDetailId";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':treeDetailId', $treeDetailId, \PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    /**
+     * Update all treeDetails' approval status to 'rejected' for a Tree
+     *
+     * @param int $treeId
+     * @return void
+     */
+    public function rejectTreeDetailsForTree(int $treeId): void {
+        $sql = "UPDATE tree_detail_history SET approval_status = 'rejected' WHERE tree_id = :treeId";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':treeId', $treeId, \PDO::PARAM_INT);
+        $stmt->execute();
+    }
 }
