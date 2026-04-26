@@ -14,12 +14,14 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import { Brand } from "@/constants/theme";
-import { getTreeObservationsApi, uploadPhotoApi } from "@/src/features/observations/observations.api";
+import { getTreeObservationsApi, uploadPhotoApi, approveObservationApi, rejectObservationApi } from "@/src/features/observations/observations.api";
 import { getTreeWildlifeApi, createWildlifeApi } from "@/src/features/observations/observations.wildlife.api";
 import { getTreeHealthApi, createHealthApi } from "@/src/features/observations/observations.health.api";
 import { createObservation } from "@/src/features/observations/usecases/createObservation";
 import { approveEverythingUseCase } from "@/src/features/trees/usecases/approveEverything"; 
 import { rejectEverythingUseCase } from "@/src/features/trees/usecases/rejectEverything";
+import { approveTreeDetailUseCase } from "@/src/features/trees/usecases/approveTreeDetailUseCase";
+import { rejectTreeDetailUseCase } from "@/src/features/trees/usecases/rejectTreeDetailUseCase";
 import ObservationCard from "@/src/features/observations/components/ObservationCard";
 import ObservationForm from "@/src/features/observations/components/ObservationForm";
 import {
@@ -34,8 +36,8 @@ import {
   type HealthItem,
 } from "@/src/features/observations/observations.types";
 import { useLoading } from "@/src/ui/loading/LoadingProvider";
-import { getTreeDetailsApi } from "@/src/features/trees/trees.api";
-import type { TreeDetail } from "@/src/features/trees/trees.types";
+import { getLatestTreeDetailsApi, getTreeDetailsApi } from "@/src/features/trees/trees.api";
+import type { getTreeDetailParams, TreeDetail } from "@/src/features/trees/trees.types";
 import TabBar, { type TabDef } from "@/src/ui/TabBar";
 import EmptyState from "@/src/ui/EmptyState";
 import PhotoViewer from "@/src/ui/PhotoViewer";
@@ -88,6 +90,8 @@ function healthToCard(h: HealthItem): ObservationItem {
 export default function TreeModalScreen() {
   const { treeId, mode: mapMode } = useLocalSearchParams<{ treeId: string; mode: MapMode }>();
   const isApprovalMode = mapMode === "adminApproval";
+  const apiFilter = {filter: {approvalStatus: isApprovalMode ? ["pending", "approved"] : ["approved"]}};
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { withLoading } = useLoading();
@@ -103,7 +107,7 @@ export default function TreeModalScreen() {
   const [loadError,    setLoadError]    = useState<string | null>(null);
 
   /* ── Details ────────────────────────────────────────────────────────────── */
-  const [details,      setDetails]      = useState<TreeDetail | null | "loading" | "error">(null);
+  const [details,      setDetails]      = useState<TreeDetail[] | null | "loading" | "error">(null);
   const detailsFetched = useRef(false);
 
   /* ── Wildlife ───────────────────────────────────────────────────────────── */
@@ -134,7 +138,7 @@ export default function TreeModalScreen() {
 
     (async () => {
       try {
-        const items = await getTreeObservationsApi(numericTreeId);
+        const items = await getTreeObservationsApi(numericTreeId, apiFilter);
         if (!cancelled) setObservations(items);
       } catch (e: any) {
         if (!cancelled) setLoadError(e?.message ?? "Could not load observations");
@@ -149,7 +153,7 @@ export default function TreeModalScreen() {
     if (tab !== "details" || !numericTreeId || detailsFetched.current) return;
     detailsFetched.current = true;
     setDetails("loading");
-    getTreeDetailsApi(numericTreeId)
+    getTreeDetailsApi(numericTreeId, apiFilter)
       .then((d) => setDetails(d))
       .catch(() => setDetails("error"));
   }, [tab, numericTreeId]);
@@ -211,7 +215,7 @@ export default function TreeModalScreen() {
         // Refresh both wildlife list and observations (observation is created too)
         const [newWildlife, newObs] = await Promise.all([
           getTreeWildlifeApi(numericTreeId),
-          getTreeObservationsApi(numericTreeId),
+          getTreeObservationsApi(numericTreeId, apiFilter),
         ]);
         setWildlife(newWildlife);
         setObservations(newObs);
@@ -223,7 +227,7 @@ export default function TreeModalScreen() {
         );
         const [newHealth, newObs] = await Promise.all([
           getTreeHealthApi(numericTreeId),
-          getTreeObservationsApi(numericTreeId),
+          getTreeObservationsApi(numericTreeId, apiFilter),
         ]);
         setHealth(newHealth);
         setObservations(newObs);
@@ -233,12 +237,12 @@ export default function TreeModalScreen() {
           () => createObservation(numericTreeId, formData, photoKeys),
           { message: "Saving...", blocking: true, background: "transparent" }
         );
-        const items = await getTreeObservationsApi(numericTreeId);
+        const items = await getTreeObservationsApi(numericTreeId, apiFilter);
         setObservations(items);
         // Refresh details if the form had measurements
         if (tab === "details") {
           detailsFetched.current = false;
-          getTreeDetailsApi(numericTreeId)
+          getTreeDetailsApi(numericTreeId, apiFilter)
             .then((d) => setDetails(d))
             .catch(() => setDetails("error"));
         }
@@ -271,6 +275,36 @@ export default function TreeModalScreen() {
 
   }
 
+  async function handleApproveTreeDetail(treeDetailId: number) {
+    if (!numericTreeId) return;
+
+    try{
+      await withLoading(
+        () => approveTreeDetailUseCase(numericTreeId, treeDetailId),
+        { message: "Approving...", blocking: true, background: "transparent" }
+      );
+      requestRefresh();
+      router.back();
+    } catch (e: any) {
+      Alert.alert("Failed to approve detail", e?.message ?? "Please try again.");
+    }
+  }
+
+  async function handleApproveObservation(observationId: number) {
+    if (!numericTreeId) return;
+
+    try{
+      await withLoading(
+        () => approveObservationApi(numericTreeId, observationId),
+        { message: "Approving...", blocking: true, background: "transparent" }
+      );
+      requestRefresh();
+      router.back();
+    } catch (e: any) {
+      Alert.alert("Failed to approve observation", e?.message ?? "Please try again.");
+    }
+  }
+
   async function handleRejectAll() {
     if (!numericTreeId) return;
 
@@ -283,6 +317,36 @@ export default function TreeModalScreen() {
       router.back();
     } catch (e: any) {
       Alert.alert("Failed to reject all", e?.message ?? "Please try again.");
+    }
+  }
+
+   async function handleRejectTreeDetail(treeDetailId: number) {
+      if (!numericTreeId) return;
+
+      try{
+        await withLoading(
+          () => rejectTreeDetailUseCase(numericTreeId, treeDetailId),
+          { message: "Rejecting...", blocking: true, background: "transparent" }
+        );
+        requestRefresh();
+        router.back();
+      } catch (e: any) {
+        Alert.alert("Failed to reject detail", e?.message ?? "Please try again.");
+      }
+    }
+
+    async function handleRejectObservation(observationId: number) {
+    if (!numericTreeId) return;
+
+    try{
+      await withLoading(
+        () => rejectObservationApi(numericTreeId, observationId),
+        { message: "Rejecting...", blocking: true, background: "transparent" }
+      );
+      requestRefresh();
+      router.back();
+    } catch (e: any) {
+      Alert.alert("Failed to reject observation", e?.message ?? "Please try again.");
     }
   }
 
@@ -410,35 +474,109 @@ export default function TreeModalScreen() {
               {details === "error" && (
                 <Text style={styles.errorText}>Could not load details.</Text>
               )}
-              {details !== null && details !== "loading" && details !== "error" && (
-                <View style={styles.detailsCard}>
-                  <DetailRow label="Height"          value={details.heightM != null ? `${details.heightM} m` : null}          sub={details.heightMethod} />
-                  <DetailRow label="Trunk diameter"  value={details.trunkDiameterCm != null ? `${details.trunkDiameterCm} cm` : null} sub={[details.diameterHeightCm != null ? `@ ${details.diameterHeightCm} cm` : null, details.diameterMethod].filter(Boolean).join(" · ")} />
-                  <DetailRow label="Canopy diameter" value={details.canopyDiameterM != null ? `${details.canopyDiameterM} m` : null}  sub={details.canopyDensity} />
-                  <DetailRow label="Est. age"        value={details.probableAgeYears != null ? `${details.probableAgeYears} yrs` : null} sub={details.ageBasis} />
-                  <DetailRow label="Est. CO2 Sequestered" value={details.estimatedCo2SequesteredYearKg != null ? `${details.estimatedCo2SequesteredYearKg} kg` : null} sub="Estimated Co2 Sequestered / Year" />
-                  <DetailRow label="Est. Water Use" value={details.estimatedWaterUseYearL != null ? `${details.estimatedWaterUseYearL} L` : null} sub="Estimated Water Use / Year" />
-                  {(details.recordedByName || details.recordedAt) && (
-                    <View style={styles.detailsFooter}>
-                      {details.recordedByName && (
-                        <View style={styles.detailsFooterItem}>
-                          <Ionicons name="person-outline" size={11} color={Brand.softGray} />
-                          <Text style={styles.detailsFooterText}>{details.recordedByName}</Text>
-                        </View>
+              {Array.isArray(details) && details.length > 0 && (
+                <>
+                  {details.map((detail, index) => (
+                    <View
+                      key={`tree-detail-${detail.id ?? detail.observationId ?? index}`}
+                      style={styles.detailsCard}
+                    >
+                      {detail.approvalStatus === "pending" && (
+                         <View style={styles.pendingRow}>
+                            {/* RIGHT: actions */}
+                            <View style={styles.pendingActions}>
+                              <Pressable onPress={() => handleApproveTreeDetail(detail.id)} style={styles.addBtn}>
+                                <Text style={styles.addBtnText}>Approve</Text>
+                              </Pressable>
+
+                              <Pressable onPress={() => handleRejectTreeDetail(detail.id)} style={styles.rejectBtn}>
+                                <Text style={styles.rejectBtnText}>Reject</Text>
+                              </Pressable>
+                            </View>
+                          </View>
                       )}
-                      {details.recordedAt && (
-                        <View style={styles.detailsFooterItem}>
-                          <Ionicons name="calendar-outline" size={11} color={Brand.softGray} />
-                          <Text style={styles.detailsFooterText}>
-                            {new Date(details.recordedAt.replace(" ", "T").replace(/\+(\d{2})$/, "+$1:00")).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
-                          </Text>
+                      
+
+                      <DetailRow
+                        label="Height"
+                        value={detail.heightM != null ? `${detail.heightM} m` : null}
+                        sub={detail.heightMethod}
+                      />
+
+                      <DetailRow
+                        label="Trunk diameter"
+                        value={detail.trunkDiameterCm != null ? `${detail.trunkDiameterCm} cm` : null}
+                        sub={[
+                          detail.diameterHeightCm != null ? `@ ${detail.diameterHeightCm} cm` : null,
+                          detail.diameterMethod,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      />
+
+                      <DetailRow
+                        label="Canopy diameter"
+                        value={detail.canopyDiameterM != null ? `${detail.canopyDiameterM} m` : null}
+                        sub={detail.canopyDensity}
+                      />
+
+                      <DetailRow
+                        label="Est. age"
+                        value={detail.probableAgeYears != null ? `${detail.probableAgeYears} yrs` : null}
+                        sub={detail.ageBasis}
+                      />
+
+                      <DetailRow
+                        label="Est. CO2 Sequestered"
+                        value={
+                          detail.estimatedCo2SequesteredYearKg != null
+                            ? `${detail.estimatedCo2SequesteredYearKg} kg`
+                            : null
+                        }
+                        sub="Estimated Co2 Sequestered / Year"
+                      />
+
+                      <DetailRow
+                        label="Est. Water Use"
+                        value={
+                          detail.estimatedWaterUseYearL != null
+                            ? `${detail.estimatedWaterUseYearL} L`
+                            : null
+                        }
+                        sub="Estimated Water Use / Year"
+                      />
+
+                      {(detail.recordedByName || detail.recordedAt) && (
+                        <View style={styles.detailsFooter}>
+                          {detail.recordedByName && (
+                            <View style={styles.detailsFooterItem}>
+                              <Ionicons name="person-outline" size={11} color={Brand.softGray} />
+                              <Text style={styles.detailsFooterText}>{detail.recordedByName}</Text>
+                            </View>
+                          )}
+
+                          {detail.recordedAt && (
+                            <View style={styles.detailsFooterItem}>
+                              <Ionicons name="calendar-outline" size={11} color={Brand.softGray} />
+                              <Text style={styles.detailsFooterText}>
+                                {new Date(
+                                  detail.recordedAt.replace(" ", "T").replace(/\+(\d{2})$/, "+$1:00")
+                                ).toLocaleDateString(undefined, {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </Text>
+                            </View>
+                          )}
                         </View>
                       )}
                     </View>
-                  )}
-                </View>
+                  ))}
+                </>
               )}
-              {details === null && (
+
+              {Array.isArray(details) && details.length === 0 && (
                 <EmptyState
                   icon="resize-outline"
                   title="No measurements yet."
@@ -480,6 +618,8 @@ export default function TreeModalScreen() {
                   item={obs}
                   isInitial={tab === "overview" && idx === 0}
                   onPhotoPress={setViewingPhoto}
+                  handleApprove={handleApproveObservation}
+                  handleReject={handleRejectObservation}
                 />
               ))}
             </ScrollView>
@@ -524,7 +664,9 @@ export default function TreeModalScreen() {
                 />
               )}
               {(health ?? []).map((h) => (
-                <ObservationCard key={h.id} item={healthToCard(h)} isInitial={false} onPhotoPress={setViewingPhoto} />
+                <ObservationCard key={h.id} item={healthToCard(h)} isInitial={false}
+                onPhotoPress={setViewingPhoto}
+                />
               ))}
             </ScrollView>
           )}
@@ -737,4 +879,16 @@ const styles = StyleSheet.create({
   primaryBtnText:   { color: Brand.white, fontWeight: "800", fontSize: 14 },
   secondaryBtn:     { backgroundColor: Brand.offWhite, paddingHorizontal: 16, paddingVertical: 13, borderRadius: 12, alignItems: "center" },
   secondaryBtnText: { color: Brand.charcoal, fontWeight: "700", fontSize: 14 },
+
+  pendingRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  margin: 8,
+},
+
+pendingActions: {
+  flexDirection: "row",
+  gap: 4,
+},
 });

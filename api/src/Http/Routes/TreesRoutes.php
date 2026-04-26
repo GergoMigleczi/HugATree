@@ -8,6 +8,7 @@ use App\Application\UseCase\GetTreesInBbox;
 use App\Application\UseCase\GetSpecies;
 use App\Application\UseCase\GetTreeObservations;
 use App\Application\UseCase\AddObservation;
+use App\Application\UseCase\GetLatestTreeDetails;
 use App\Application\UseCase\GetTreeDetails;
 use App\Application\UseCase\GetTree;
 use App\Application\UseCase\GetWildlifeSpecies;
@@ -209,6 +210,7 @@ final class TreesRoutes
         CreateTree $createTree,
         GetTreeObservations $getTreeObservations,
         AddObservation $addObservation,
+        GetLatestTreeDetails $getLatestTreeDetails,
         GetTreeDetails $getTreeDetails,
         ApproveTree $approveTree,
         ApproveEverythingForTree $approveEverythingForTree,
@@ -220,14 +222,32 @@ final class TreesRoutes
         RejectTreeDetail $rejectTreeDetail
     ): void
     {
+        // GET /trees/:id/latest-details (JWT required)
+        $routes->get('/trees/{id}/latest-details', function (Request $req, Response $res, array $args) use ($getLatestTreeDetails) {
+            $treeId = (int)($args['id'] ?? 0);
+            if ($treeId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid tree id'], 400);
+            }
+            try {
+                $result = $getLatestTreeDetails->execute($treeId);
+                return Json::ok($res, $result ?? [], 200);
+            } catch (\Throwable $e) {
+                error_log('[GET /trees/' . $treeId . '/latest-details] ' . $e->getMessage());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+
         // GET /trees/:id/details (JWT required)
         $routes->get('/trees/{id}/details', function (Request $req, Response $res, array $args) use ($getTreeDetails) {
             $treeId = (int)($args['id'] ?? 0);
             if ($treeId <= 0) {
                 return Json::ok($res, ['error' => 'Invalid tree id'], 400);
             }
+
+            $query = $req->getQueryParams();
+            
             try {
-                $result = $getTreeDetails->execute($treeId);
+                $result = $getTreeDetails->execute($treeId, $query);
                 return Json::ok($res, $result ?? [], 200);
             } catch (\Throwable $e) {
                 error_log('[GET /trees/' . $treeId . '/details] ' . $e->getMessage());
@@ -242,8 +262,11 @@ final class TreesRoutes
             if ($treeId <= 0) {
                 return Json::ok($res, ['error' => 'Invalid tree id'], 400);
             }
+
+            $query = $req->getQueryParams();
+
             try {
-                $items = $getTreeObservations->execute($treeId);
+                $items = $getTreeObservations->execute($treeId, $query);
                 return Json::ok($res, $items, 200);
             } catch (\Throwable $e) {
                 error_log('[GET /trees/' . $treeId . '/observations] ' . $e->getMessage());

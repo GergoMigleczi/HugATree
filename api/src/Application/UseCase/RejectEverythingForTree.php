@@ -6,7 +6,7 @@ namespace App\Application\UseCase;
 use App\Application\Ports\TreeRepository;
 use App\Application\Ports\ObservationRepository;
 use App\Application\Ports\ObservationPhotoRepository;
-use App\Application\Ports\TreeDetailsRepository;
+use App\Application\Ports\TreeDetailHistoryRepository;
 
 final class RejectEverythingForTree
 {
@@ -14,7 +14,7 @@ final class RejectEverythingForTree
         private TreeRepository $treeRepository,
         private ObservationRepository $observationRepository,
         private ObservationPhotoRepository $observationPhotoRepository, 
-        private TreeDetailsRepository $treeDetailsRepository,
+        private TreeDetailHistoryRepository $treeDetailHistoryRepository,
     ) {}
 
     /**
@@ -39,6 +39,6 @@ final class RejectEverythingForTree
         $this->observationPhotoRepository->rejectPhotosForTree($treeId);
         
         // 4. Reject all pending tree detail records for this tree
-        $this->treeDetailsRepository->rejectTreeDetailsForTree($treeId);
+        $this->treeDetailHistoryRepository->rejectTreeDetailsForTree($treeId);
     }
 }

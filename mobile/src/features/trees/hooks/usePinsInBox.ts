@@ -26,8 +26,10 @@ export function usePinsInBbox(args: {
     if (!enabled) return;
     if (!viewport) return;
 
-    const filter = {approvalStatus: mode === "adminApproval" ? ["pending"] : ["approved"]}; 
-
+  const filter = {
+    approvalStatus: mode === "adminApproval" ? ["pending", "approved"] : ["approved"],
+    hasPending: mode === "adminApproval",
+  };
     let cancelled = false;
     setState((s) => ({ status: "loading", pins: s.pins, error: null }));
 

@@ -9,8 +9,24 @@ final class GetTreeDetails
 {
     public function __construct(private TreeDetailHistoryRepository $treeDetails) {}
 
-    public function execute(int $treeId): ?array
+    public function execute(int $treeId, array $query): ?array
     {
-        return $this->treeDetails->latestByTreeId($treeId);
+        $filter = [];
+        if (isset($query['filter'])) {
+            $filter = json_decode($query['filter'], true);
+            if (!is_array($filter)) {
+                throw new \InvalidArgumentException('filter must be a valid JSON object');
+            }
+        }
+        $approvalStatus = [];
+        if($filter && isset($filter['approvalStatus']) && is_array($filter['approvalStatus'])) {
+            $allowedStatuses = ['approved', 'pending', 'rejected'];
+            foreach ($filter['approvalStatus'] as $status) {
+                if (in_array($status, $allowedStatuses, true)) {
+                    $approvalStatus[] = $status;
+                }
+            }
+        }
+        return $this->treeDetails->listByTreeId($treeId, $approvalStatus);
     }
 }
