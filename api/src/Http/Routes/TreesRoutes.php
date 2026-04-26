@@ -17,8 +17,12 @@ use App\Application\UseCase\GetTreeHealth;
 use App\Application\UseCase\CreateHealth;
 use App\Application\UseCase\ApproveTree;
 use App\Application\UseCase\ApproveEverythingForTree;
+use App\Application\UseCase\ApproveObservation;
+use App\Application\UseCase\ApproveTreeDetail;
 use App\Application\UseCase\RejectTree;
 use App\Application\UseCase\RejectEverythingForTree;
+use App\Application\UseCase\RejectObservation;
+use App\Application\UseCase\RejectTreeDetail;
 use App\Http\Json;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -208,8 +212,12 @@ final class TreesRoutes
         GetTreeDetails $getTreeDetails,
         ApproveTree $approveTree,
         ApproveEverythingForTree $approveEverythingForTree,
+        ApproveObservation $approveObservation,
+        ApproveTreeDetail $approveTreeDetail,
         RejectTree $rejectTree,
-        RejectEverythingForTree $rejectEverythingForTree
+        RejectEverythingForTree $rejectEverythingForTree,
+        RejectObservation $rejectObservation,
+        RejectTreeDetail $rejectTreeDetail
     ): void
     {
         // GET /trees/:id/details (JWT required)
@@ -342,6 +350,60 @@ final class TreesRoutes
             }
         });
 
+        //POST /trees/:id/observations/:id/approve (JWT required)
+        $routes->post('/trees/{treeId}/observations/{observationId}/approve', function (Request $req, Response $res, array $args) use ($approveObservation) {
+            $claims = $req->getAttribute('auth');
+            if (!is_array($claims) || empty($claims['sub'])) {
+                return Json::ok($res, ['error' => 'Unauthenticated'], 401);
+            }   
+
+            $treeId = (int)($args['treeId'] ?? 0);
+            if ($treeId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid tree id'], 400);
+            }
+
+            $observationId = (int)($args['observationId'] ?? 0);
+            if ($observationId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid observation id'], 400);
+            }   
+            try {                
+                $approveObservation->execute($observationId);
+                return Json::ok($res, ['ok' => true], 200);
+            } catch (\InvalidArgumentException $e) {
+                return Json::ok($res, ['error' => $e->getMessage()], 422);
+            } catch (\Throwable $e) {
+                error_log('[POST /trees/' . $treeId . '/observations/' . $observationId . '/approve] ' . $e->getMessage());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+
+        // POST /trees/:id/details/:id/approve (JWT required)
+        $routes->post('/trees/{treeId}/details/{detailId}/approve', function (Request $req, Response $res, array $args) use ($approveTreeDetail) {
+            $claims = $req->getAttribute('auth');
+            if (!is_array($claims) || empty($claims['sub'])) {
+                return Json::ok($res, ['error' => 'Unauthenticated'], 401);
+            }   
+
+            $treeId = (int)($args['treeId'] ?? 0);
+            if ($treeId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid tree id'], 400);
+            }
+
+            $detailId = (int)($args['detailId'] ?? 0);
+            if ($detailId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid detail id'], 400);
+            }   
+            try {                
+                $approveTreeDetail->execute($detailId);
+                return Json::ok($res, ['ok' => true], 200);
+            } catch (\InvalidArgumentException $e) {
+                return Json::ok($res, ['error' => $e->getMessage()], 422);
+            } catch (\Throwable $e) {
+                error_log('[POST /trees/' . $treeId . '/details/' . $detailId . '/approve] ' . $e->getMessage());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+
         // POST /trees/:id/reject (JWT required)
         $routes->post('/trees/{id}/reject', function (Request $req, Response $res, array $args) use ($rejectTree) {
             $claims = $req->getAttribute('auth');
@@ -381,6 +443,56 @@ final class TreesRoutes
                 return Json::ok($res, ['error' => $e->getMessage()], 422);
             } catch (\Throwable $e) {
                 error_log('[POST /trees/' . $treeId . '/rejectEverything] ' . $e->getMessage());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+
+        // POST /trees/:id/observations/:id/reject (JWT required)
+        $routes->post('/trees/{treeId}/observations/{observationId}/reject', function (Request $req, Response $res, array $args) use ($rejectObservation) {
+            $claims = $req->getAttribute('auth');
+            if (!is_array($claims) || empty($claims['sub'])) {
+                return Json::ok($res, ['error' => 'Unauthenticated'], 401);
+            } 
+            $treeId = (int)($args['treeId'] ?? 0);
+            if ($treeId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid tree id'], 400);
+            }
+            $observationId = (int)($args['observationId'] ?? 0);
+            if ($observationId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid observation id'], 400);
+            }
+            try {
+                $rejectObservation->execute($observationId);
+                return Json::ok($res, ['ok' => true], 200);
+            } catch (\InvalidArgumentException $e) {
+                return Json::ok($res, ['error' => $e->getMessage()], 422);
+            } catch (\Throwable $e) {
+                error_log('[POST /trees/' . $treeId . '/observations/' . $observationId . '/reject] ' . $e->getMessage());
+                return Json::ok($res, ['error' => 'Unexpected server error'], 500);
+            }
+        });
+
+        // POST /trees/:id/details/:id/reject (JWT required)
+        $routes->post('/trees/{treeId}/details/{detailId}/reject', function (Request $req, Response $res, array $args) use ($rejectTreeDetail) {        
+            $claims = $req->getAttribute('auth');
+            if (!is_array($claims) || empty($claims['sub'])) {
+                return Json::ok($res, ['error' => 'Unauthenticated'], 401);
+            } 
+            $treeId = (int)($args['treeId'] ?? 0);
+            if ($treeId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid tree id'], 400);
+            }
+            $detailId = (int)($args['detailId'] ?? 0);
+            if ($detailId <= 0) {
+                return Json::ok($res, ['error' => 'Invalid detail id'], 400);
+            }
+            try {
+                $rejectTreeDetail->execute($detailId);
+                return Json::ok($res, ['ok' => true], 200);
+            } catch (\InvalidArgumentException $e) {
+                return Json::ok($res, ['error' => $e->getMessage()], 422);
+            } catch (\Throwable $e) {
+                error_log('[POST /trees/' . $treeId . '/details/' . $detailId . '/reject] ' . $e->getMessage());
                 return Json::ok($res, ['error' => 'Unexpected server error'], 500);
             }
         });
