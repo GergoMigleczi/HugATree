@@ -43,4 +43,5 @@ describe("authLogout", () => {
     await authLogout();
     expect(mockClearTokens).toHaveBeenCalled();
   });
+
 });

@@ -68,12 +68,19 @@ describe("auth.api", () => {
 
   describe("refreshApi", () => {
     test("posts to /auth/refresh with the refresh token", async () => {
-      mockApiRequest.mockResolvedValueOnce({ accessToken: "a", refreshToken: "r" });
+      mockApiRequest.mockResolvedValueOnce({ accessToken: "new-a", refreshToken: "new-r" });
       await refreshApi({ refreshToken: "refresh123" });
       expect(mockApiRequest).toHaveBeenCalledWith("/auth/refresh", {
         method: "POST",
         body: { refreshToken: "refresh123" },
       });
+    });
+
+    test("returns the new access and refresh tokens", async () => {
+      const response = { accessToken: "new-a", refreshToken: "new-r" };
+      mockApiRequest.mockResolvedValueOnce(response);
+      const result = await refreshApi({ refreshToken: "refresh123" });
+      expect(result).toEqual(response);
     });
   });
 
@@ -98,6 +105,13 @@ describe("auth.api", () => {
       mockAuthFetch.mockResolvedValueOnce({ user: { id: 1, email: "a@b.com" } });
       await getMeApi();
       expect(mockAuthFetch).toHaveBeenCalledWith("/me");
+    });
+
+    test("returns the user from the response", async () => {
+      const response = { user: { id: 1, email: "a@b.com", display_name: "Alice", admin_flag: false } };
+      mockAuthFetch.mockResolvedValueOnce(response);
+      const result = await getMeApi();
+      expect(result).toEqual(response);
     });
 
     test("propagates errors from authFetch", async () => {

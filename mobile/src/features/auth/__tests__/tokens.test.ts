@@ -18,13 +18,10 @@ describe("tokens", () => {
   });
 
   describe("saveTokens", () => {
-    test("stores the access token under the access key", async () => {
+    test("stores both tokens — exactly two SecureStore writes", async () => {
       await saveTokens("access123", "refresh456");
+      expect(mockSetItem).toHaveBeenCalledTimes(2);
       expect(mockSetItem).toHaveBeenCalledWith("accessToken", "access123");
-    });
-
-    test("stores the refresh token under the refresh key", async () => {
-      await saveTokens("access123", "refresh456");
       expect(mockSetItem).toHaveBeenCalledWith("refreshToken", "refresh456");
     });
   });
@@ -58,13 +55,10 @@ describe("tokens", () => {
   });
 
   describe("clearTokens", () => {
-    test("deletes the access token key", async () => {
+    test("deletes both keys — exactly two SecureStore deletes", async () => {
       await clearTokens();
+      expect(mockDeleteItem).toHaveBeenCalledTimes(2);
       expect(mockDeleteItem).toHaveBeenCalledWith("accessToken");
-    });
-
-    test("deletes the refresh token key", async () => {
-      await clearTokens();
       expect(mockDeleteItem).toHaveBeenCalledWith("refreshToken");
     });
   });

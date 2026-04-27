@@ -16,6 +16,7 @@ jest.mock("@/src/features/auth/tokens", () => ({
 }));
 
 import { refreshTokens, authFetch } from "../authFetch";
+// refreshPromise is reset by the finally block inside refreshTokens itself.
 
 describe("refreshTokens", () => {
   beforeEach(() => {
@@ -45,15 +46,9 @@ describe("refreshTokens", () => {
 
   test("deduplicates concurrent calls — apiRequest is only called once", async () => {
     mockGetRefreshToken.mockResolvedValue("old-refresh");
-    let resolve!: (v: any) => void;
-    const deferred = new Promise((res) => { resolve = res; });
-    mockApiRequest.mockReturnValueOnce(deferred);
+    mockApiRequest.mockResolvedValue({ accessToken: "a", refreshToken: "r" });
 
-    const [a, b] = await Promise.all([
-      refreshTokens(),
-      refreshTokens(),
-      resolve({ accessToken: "a", refreshToken: "r" }),
-    ]);
+    const [a, b] = await Promise.all([refreshTokens(), refreshTokens()]);
 
     expect(mockApiRequest).toHaveBeenCalledTimes(1);
     expect(a).toBe(true);
@@ -115,6 +110,16 @@ describe("authFetch", () => {
     await expect(authFetch("/protected")).rejects.toThrow("Session expired. Please log in again.");
   });
 
+  test("forwards method and body to apiRequest", async () => {
+    mockGetAccessToken.mockResolvedValue("my-token");
+    mockApiRequest.mockResolvedValueOnce({ ok: true });
+    await authFetch("/trees", { method: "POST", body: { name: "Oak" } });
+    expect(mockApiRequest).toHaveBeenCalledWith("/trees", expect.objectContaining({
+      method: "POST",
+      body: { name: "Oak" },
+    }));
+  });
+
   test("sends request without bearer token when no access token is stored", async () => {
     mockGetAccessToken.mockResolvedValue(null);
     mockApiRequest.mockResolvedValueOnce({ data: "ok" });
@@ -131,24 +136,19 @@ describe("authFetch", () => {
 
     const unauthorized = Object.assign(new Error("Unauthorized"), { status: 401 });
 
-    let resolveRefresh!: (v: any) => void;
-    const deferredRefresh = new Promise((res) => { resolveRefresh = res; });
-
-    // Both initial requests fail with 401; the refresh call is deferred
     mockApiRequest
-      .mockRejectedValueOnce(unauthorized)                    // request A → 401
-      .mockRejectedValueOnce(unauthorized)                    // request B → 401
-      .mockReturnValueOnce(deferredRefresh)                   // shared refresh call
-      .mockResolvedValueOnce({ data: "retried-a" })           // retry A
-      .mockResolvedValueOnce({ data: "retried-b" });          // retry B
+      .mockRejectedValueOnce(unauthorized)                                    // request A → 401
+      .mockRejectedValueOnce(unauthorized)                                    // request B → 401
+      .mockResolvedValueOnce({ accessToken: "new-access", refreshToken: "new-refresh" }) // shared refresh
+      .mockResolvedValueOnce({ data: "retried-a" })                           // retry A
+      .mockResolvedValueOnce({ data: "retried-b" });                          // retry B
 
     const [resultA, resultB] = await Promise.all([
       authFetch("/protected-a"),
       authFetch("/protected-b"),
-      resolveRefresh({ accessToken: "new-access", refreshToken: "new-refresh" }),
     ]);
 
-    // apiRequest called: A + B (initial) + 1 (refresh) + A + B (retries) = 5
+    // A + B (initial) + 1 (shared refresh) + A + B (retries) = 5
     expect(mockApiRequest).toHaveBeenCalledTimes(5);
     expect(resultA).toEqual({ data: "retried-a" });
     expect(resultB).toEqual({ data: "retried-b" });
