@@ -114,4 +114,43 @@ describe("authFetch", () => {
 
     await expect(authFetch("/protected")).rejects.toThrow("Session expired. Please log in again.");
   });
+
+  test("sends request without bearer token when no access token is stored", async () => {
+    mockGetAccessToken.mockResolvedValue(null);
+    mockApiRequest.mockResolvedValueOnce({ data: "ok" });
+    await authFetch("/public");
+    expect(mockApiRequest).toHaveBeenCalledWith("/public", expect.objectContaining({
+      accessToken: undefined,
+    }));
+  });
+
+  test("concurrent 401s only trigger one token refresh", async () => {
+    mockGetAccessToken.mockResolvedValue("old-token");
+    mockGetRefreshToken.mockResolvedValue("old-refresh");
+    mockSaveTokens.mockResolvedValue(undefined);
+
+    const unauthorized = Object.assign(new Error("Unauthorized"), { status: 401 });
+
+    let resolveRefresh!: (v: any) => void;
+    const deferredRefresh = new Promise((res) => { resolveRefresh = res; });
+
+    // Both initial requests fail with 401; the refresh call is deferred
+    mockApiRequest
+      .mockRejectedValueOnce(unauthorized)                    // request A → 401
+      .mockRejectedValueOnce(unauthorized)                    // request B → 401
+      .mockReturnValueOnce(deferredRefresh)                   // shared refresh call
+      .mockResolvedValueOnce({ data: "retried-a" })           // retry A
+      .mockResolvedValueOnce({ data: "retried-b" });          // retry B
+
+    const [resultA, resultB] = await Promise.all([
+      authFetch("/protected-a"),
+      authFetch("/protected-b"),
+      resolveRefresh({ accessToken: "new-access", refreshToken: "new-refresh" }),
+    ]);
+
+    // apiRequest called: A + B (initial) + 1 (refresh) + A + B (retries) = 5
+    expect(mockApiRequest).toHaveBeenCalledTimes(5);
+    expect(resultA).toEqual({ data: "retried-a" });
+    expect(resultB).toEqual({ data: "retried-b" });
+  });
 });

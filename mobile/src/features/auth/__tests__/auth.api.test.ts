@@ -26,6 +26,13 @@ describe("auth.api", () => {
       });
     });
 
+    test("returns the response from apiRequest", async () => {
+      const response = { user: { id: 1, email: "a@b.com", display_name: "Alice", admin_flag: false } };
+      mockApiRequest.mockResolvedValueOnce(response);
+      const result = await registerApi({ email: "a@b.com", password: "pass", displayName: "Alice", adminFlag: false });
+      expect(result).toEqual(response);
+    });
+
     test("propagates errors from apiRequest", async () => {
       mockApiRequest.mockRejectedValueOnce(new Error("Email already in use"));
       await expect(
@@ -42,6 +49,13 @@ describe("auth.api", () => {
         method: "POST",
         body: { email: "a@b.com", password: "pass", device_label: "expo" },
       });
+    });
+
+    test("returns the access token, refresh token and user from the response", async () => {
+      const response = { accessToken: "acc", refreshToken: "ref", user: { id: 1, email: "a@b.com", display_name: null, admin_flag: false } };
+      mockApiRequest.mockResolvedValueOnce(response);
+      const result = await loginApi({ email: "a@b.com", password: "pass", deviceLabel: "expo" });
+      expect(result).toEqual(response);
     });
 
     test("propagates errors from apiRequest", async () => {
