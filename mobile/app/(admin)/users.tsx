@@ -53,6 +53,14 @@ export default function AdminScreen() {
     fetchUsers();
   }, [isAdmin, fetchUsers]);
 
+  if (!isAdmin) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <Text>Admin access required</Text>
+      </View>
+    );
+  }
+
   async function handleToggle(targetUser: AdminUser) {
     if (targetUser.id === currentUser?.id) {
       Alert.alert("Not allowed", "You cannot deactivate your own account.");
