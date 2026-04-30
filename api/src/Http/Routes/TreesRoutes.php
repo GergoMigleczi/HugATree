@@ -212,14 +212,6 @@ final class TreesRoutes
         AddObservation $addObservation,
         GetLatestTreeDetails $getLatestTreeDetails,
         GetTreeDetails $getTreeDetails,
-        ApproveTree $approveTree,
-        ApproveEverythingForTree $approveEverythingForTree,
-        ApproveObservation $approveObservation,
-        ApproveTreeDetail $approveTreeDetail,
-        RejectTree $rejectTree,
-        RejectEverythingForTree $rejectEverythingForTree,
-        RejectObservation $rejectObservation,
-        RejectTreeDetail $rejectTreeDetail
     ): void
     {
         // GET /trees/:id/latest-details (JWT required)
@@ -328,7 +320,19 @@ final class TreesRoutes
                 return Json::ok($res, ['error' => 'Unexpected server error'], 500);
             }
         });
+    }
 
+    public static function registerAdmin($routes,
+        ApproveTree $approveTree,
+        ApproveEverythingForTree $approveEverythingForTree,
+        ApproveObservation $approveObservation,
+        ApproveTreeDetail $approveTreeDetail,
+        RejectTree $rejectTree,
+        RejectEverythingForTree $rejectEverythingForTree,
+        RejectObservation $rejectObservation,
+        RejectTreeDetail $rejectTreeDetail
+    ): void
+    {
         // POST /trees/:id/approve (JWT required)
         $routes->post('/trees/{id}/approve', function (Request $req, Response $res, array $args) use ($approveTree) {
             $claims = $req->getAttribute('auth');

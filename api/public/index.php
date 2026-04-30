@@ -18,6 +18,7 @@ use App\Http\Routes\MeRoutes;
 use App\Http\Routes\PhotoRoutes;
 use App\Http\Routes\TreesRoutes;
 use App\Http\Middleware\AuthMiddleware;
+use App\Http\Middleware\AdminMiddleware;
 
 use App\Infrastructure\Persistence\DbConnection;
 use App\Infrastructure\Persistence\PdoSessionRepository;
@@ -181,11 +182,16 @@ TreesRoutes::registerPublic($app, $getTreesInBbox, $getSpecies, $getTree);
 PhotoRoutes::registerPublic($app, $fileStorage);
 
 // Protected endpoints (JWT required)
-$app->group('', function ($group) use ($createTree, $getTreeObservations, $addObservation, $getLatestTreeDetails, $getTreeDetails, $uploadPhoto, $getTreeWildlife, $createWildlife, $getTreeHealth, $createHealth, $approveTree, $approveEverythingForTree, $rejectTree, $rejectEverythingForTree, $approveObservation, $approveTreeDetail, $rejectObservation, $rejectTreeDetail) {
-  TreesRoutes::registerProtected($group, $createTree, $getTreeObservations, $addObservation, $getLatestTreeDetails, $getTreeDetails, $approveTree, $approveEverythingForTree, $approveObservation, $approveTreeDetail, $rejectTree, $rejectEverythingForTree, $rejectObservation, $rejectTreeDetail);
+$app->group('', function ($group) use ($createTree, $getTreeObservations, $addObservation, $getLatestTreeDetails, $getTreeDetails, $uploadPhoto, $getTreeWildlife, $createWildlife, $getTreeHealth, $createHealth) {
+  TreesRoutes::registerProtected($group, $createTree, $getTreeObservations, $addObservation, $getLatestTreeDetails, $getTreeDetails);
   TreesRoutes::registerWildlifeHealthProtected($group, $getTreeWildlife, $createWildlife, $getTreeHealth, $createHealth);
   PhotoRoutes::registerProtected($group, $uploadPhoto);
 })->add(new AuthMiddleware());
+
+// Admin Protected endpoints (JWT required & Admin role required)
+$app->group('', function ($group) use ($approveTree, $approveEverythingForTree, $rejectTree, $rejectEverythingForTree, $approveObservation, $approveTreeDetail, $rejectObservation, $rejectTreeDetail) {
+    TreesRoutes::registerAdmin($group, $approveTree, $approveEverythingForTree, $approveObservation, $approveTreeDetail, $rejectTree, $rejectEverythingForTree, $rejectObservation, $rejectTreeDetail);
+})->add(new AdminMiddleware($userRepo))->add(new AuthMiddleware());
 
 $routeCollector = $app->getRouteCollector();
 $routes = $routeCollector->getRoutes();
