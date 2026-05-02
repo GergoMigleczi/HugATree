@@ -20,18 +20,7 @@ services:
   api:
     build: ./api
     container_name: hugatree_api
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: hugatree
-      DB_USER: postgres
-      DB_PASS: postgres
-
-      JWT_SECRET: change_me_to_a_long_random_string
-      JWT_ISSUER: hugatree
-      ACCESS_TTL_MINUTES: 1
-      REFRESH_TTL_DAYS: 30
-      UPLOADS_PATH: /var/uploads
+    env_file: ./api/.env
     volumes:
       - uploads_data:/var/uploads
     ports:
