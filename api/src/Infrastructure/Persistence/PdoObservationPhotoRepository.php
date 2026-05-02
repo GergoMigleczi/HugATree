@@ -31,6 +31,36 @@ final class PdoObservationPhotoRepository implements ObservationPhotoRepository
     }
 
     /**
+     * List all photos for a Tree
+     *
+     * @param int $treeId
+     * @param array $approvalStatus
+     * @return array<>
+     */
+    public function listPhotosByTree(int $treeId,
+        array $approvalStatus = ['approved']): array
+    {
+        $sql = "
+            SELECT
+                op.id,
+                op.storage_key,
+                op.approval_status,
+                o.id AS observation_id,
+                o.title AS observation_title,
+                o.observed_at AS observation_observed_at
+            FROM observation_photos op
+            JOIN observations o ON o.id = op.observation_id
+            WHERE o.tree_id = :tree_id
+            AND op.approval_status IN ('" . implode("', '", $approvalStatus) . "')
+            ORDER BY op.id ASC
+        ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':tree_id' => $treeId]);
+        return $stmt->fetchAll();
+    }
+
+    /**
      * Update all photos' approval status to 'approved' for a Tree
      *
      * @param int $treeId

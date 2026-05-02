@@ -145,7 +145,7 @@ $getTreeObservations = new GetTreeObservations($observationRepo);
 $addObservation = new AddObservation($tx, $observationRepo, $photoRepo, $treeDetailRepo, $treeRepo, $metricsCalculator, $weatherSummaryService);
 $getLatestTreeDetails = new GetLatestTreeDetails($treeDetailRepo);
 $getTreeDetails = new GetTreeDetails($treeDetailRepo);
-$getTree = new GetTree($treeRepo, $treeDetailRepo);
+$getTree = new GetTree($treeRepo, $treeDetailRepo, $photoRepo);
 $createTree = new CreateTree(
   $tx,
   $treeRepo,
