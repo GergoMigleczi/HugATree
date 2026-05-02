@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "https://hugatree.onrender.com";
 
 function getTreeIdFromUrl() {
     const params = new URLSearchParams(window.location.search);

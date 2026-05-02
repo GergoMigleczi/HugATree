@@ -20,3 +20,6 @@ api/node_modules/
 
 # test coverage
 mobile/coverage/
+
+# Supabase
+*supabase.txt
