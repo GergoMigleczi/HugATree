@@ -47,6 +47,7 @@ services:
       -d log_errors=1
       -S 0.0.0.0:8000
       -t public
+      public/index.php
 
 volumes:
   db_data:
