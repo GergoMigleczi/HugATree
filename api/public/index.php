@@ -36,6 +36,7 @@ use App\Infrastructure\Persistence\PdoHealthRepository;
 use App\Infrastructure\Security\JwtTokenService;
 use App\Infrastructure\Security\PhpPasswordHasher;
 use App\Infrastructure\Storage\LocalFileStorageService;
+use App\Infrastructure\Storage\SupabaseFileStorageService;
 
 use App\Application\Service\TreeMetricsCalculator;
 use App\Application\Service\WeatherSummaryService;
@@ -121,7 +122,9 @@ $wildlifeRepo = new PdoWildlifeRepository($pdo);
 $healthRepo = new PdoHealthRepository($pdo);
 
 // --- file storage ---
-$fileStorage = new LocalFileStorageService($_ENV['UPLOADS_PATH'] ?? '/var/uploads');
+$fileStorage = ($_ENV['FILE_STORAGE_DRIVER'] ?? 'local') === 'supabase'
+    ? new SupabaseFileStorageService()
+    : new LocalFileStorageService($_ENV['UPLOADS_PATH'] ?? '/var/uploads');
 $uploadPhoto = new UploadPhoto($fileStorage);
 
 // --- services ---

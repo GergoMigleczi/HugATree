@@ -47,18 +47,27 @@ final class PhotoRoutes
         // The {filename} segment is the UUID + extension (e.g. "abc123.jpg").
         $routes->get('/photos/{filename}', function (Request $req, Response $res, array $args) use ($storage) {
             $storageKey = 'photos/' . $args['filename'];
-            $filePath   = $storage->resolve($storageKey);
+            $resolved = $storage->resolve($storageKey);
 
-            if (!file_exists($filePath)) {
+            // Remote storage: redirect to public URL
+            if (filter_var($resolved, FILTER_VALIDATE_URL)) {
+                return $res
+                    ->withHeader('Location', $resolved)
+                    ->withHeader('Cache-Control', 'public, max-age=31536000, immutable')
+                    ->withStatus(302);
+            }
+
+            // Local storage: stream from disk
+            if (!file_exists($resolved)) {
                 return Json::ok($res, ['error' => 'Not found.'], 404);
             }
 
-            $mimeType = mime_content_type($filePath) ?: 'application/octet-stream';
-            $stream   = new Stream(fopen($filePath, 'rb'));
+            $mimeType = mime_content_type($resolved) ?: 'application/octet-stream';
+            $stream = new Stream(fopen($resolved, 'rb'));
 
             return $res
                 ->withHeader('Content-Type', $mimeType)
-                ->withHeader('Content-Length', (string) filesize($filePath))
+                ->withHeader('Content-Length', (string) filesize($resolved))
                 ->withHeader('Cache-Control', 'public, max-age=31536000, immutable')
                 ->withBody($stream);
         });
