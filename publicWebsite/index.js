@@ -91,6 +91,57 @@ function renderTree(data) {
     if (typeof tree.lat === "number" && typeof tree.lng === "number") {
         renderMap(tree.lat, tree.lng, treeName);
     }
+
+    renderPhotos(data.photos || []);
+}
+
+function renderPhotos(photos = []) {
+    const approvedPhotos = photos.filter(photo => photo.approval_status === "approved");
+    const heroPhoto = document.getElementById("heroPhoto");
+    const photoGallery = document.getElementById("photoGallery");
+
+    if (!heroPhoto || !photoGallery) return;
+
+    if (approvedPhotos.length === 0) {
+        photoGallery.innerHTML = `
+            <div class="col-12">
+                <p class="text-muted mb-0">No approved photos available yet.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const firstPhotoUrl = `${API_BASE_URL}/${approvedPhotos[0].storage_key}`;
+
+    heroPhoto.style.backgroundImage = `url("${firstPhotoUrl}")`;
+    heroPhoto.classList.add("has-image");
+
+    const remainingPhotos = approvedPhotos.slice(1);
+
+    if (remainingPhotos.length === 0) {
+        photoGallery.innerHTML = `
+            <div class="col-12">
+                <p class="text-muted mb-0">Only one approved photo is available, shown above.</p>
+            </div>
+        `;
+        return;
+    }
+
+    photoGallery.innerHTML = remainingPhotos.map(photo => {
+        const photoUrl = `${API_BASE_URL}/${photo.storage_key}`;
+
+        return `
+            <div class="col-6 col-md-3">
+                <div class="gallery-tile border rounded-4 overflow-hidden">
+                    <img 
+                        src="${photoUrl}" 
+                        alt="${photo.observation_title || "Tree photo"}"
+                        class="gallery-photo"
+                    />
+                </div>
+            </div>
+        `;
+    }).join("");
 }
 
 async function loadTree() {
@@ -115,6 +166,7 @@ async function loadTree() {
         }
 
         const data = await response.json();
+        console.log("Fetched tree data:", data);
         renderTree(data);
 
         loadingState.classList.add("d-none");

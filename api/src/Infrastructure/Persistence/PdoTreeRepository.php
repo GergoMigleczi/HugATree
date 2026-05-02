@@ -194,7 +194,7 @@ final class PdoTreeRepository implements TreeRepository
    * }
    */
   public function getATree(
-  int $treeId
+  int $treeId, $approvalStatus = ['approved']
   ): array {
       
     $sql = "
@@ -211,6 +211,7 @@ final class PdoTreeRepository implements TreeRepository
       FROM trees t
       LEFT JOIN species s ON s.id = t.species_id
       WHERE t.id = :treeId
+      AND t.approval_status IN ('" . implode("', '", $approvalStatus) . "')
       ";
       
       $treeStmt = $this->pdo->prepare($sql);

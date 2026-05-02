@@ -7,6 +7,16 @@ interface ObservationPhotoRepository
     public function insert(array $photo): int;
 
     /**
+     * List all photos for a Tree
+     *
+     * @param int $treeId
+     * @param array $approvalStatus
+     * @return array<>
+     */
+    public function listPhotosByTree(int $treeId,
+        array $approvalStatus = ['approved']): array;
+
+    /**
      * Update all photos' approval status to 'approved' for a Tree
      *
      * @param int $treeId
