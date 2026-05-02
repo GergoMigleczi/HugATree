@@ -3,19 +3,17 @@ import { Redirect, Stack, useNavigation } from "expo-router";
 import { useEffect } from "react";
 
 import { useAuth } from "@/src/features/auth/AuthProvider";
-import { useLoading } from "@/src/ui/loading/LoadingProvider";
 
-export default function TabsLayout() {
+export default function AdminLayout() {
   const { isAdmin, isLoggedIn } = useAuth();
-  const { show, hide } = useLoading();
 
-    const navigation = useNavigation();
+  const navigation = useNavigation();
 
-    useEffect(() => {
-    navigation.setOptions({
-        headerShown: false,
-    });
-    }, [navigation]);
+  useEffect(() => {
+  navigation.setOptions({
+      headerShown: false,
+  });
+  }, [navigation]);
 
   if (!isLoggedIn) return <Redirect href="/(auth)/login" />;
   if (!isAdmin) return <Redirect href="/(tabs)/home" />;
