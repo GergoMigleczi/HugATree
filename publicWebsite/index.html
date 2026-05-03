@@ -4,36 +4,44 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tree Details</title>
+    <!-- Site favicon -->
     <link rel="icon" type="image/png" href="./media/logo.png">
+    <!-- Bootstrap CSS for layout and components -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <!-- Leaflet CSS for interactive map -->
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
+    <!-- Bootstrap Icons for fact card icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+      /* Map container */
       #map {
         min-height: 320px;
         border-radius: 1rem;
       }
 
+      /* Hero section - displays first approved photo as background */
       .hero-photo {
         min-height: 260px;
         background-size: cover;
         background-position: center;
       }
 
+      /* Semi-transparent overlay for text readability when a background photo is set */
       .hero-photo.has-image > div {
         background: rgba(255, 255, 255, 0.85);
         border-radius: 1rem;
         padding: 1rem;
       }
 
+      /* Gallery photos fill container and crop to fit */
       .gallery-photo {
         width: 100%;
         height: 100%;
@@ -41,6 +49,7 @@
         border-radius: 1rem;
       }
 
+      /* Individual measurement cards for height, age, CO2, etc. */
       .fact-card {
         border: 1px solid var(--bs-border-color);
         border-radius: 1rem;
@@ -49,12 +58,14 @@
         height: 100%;
       }
 
+      /* Square aspect ratio for gallery thumbnails */
       .gallery-tile {
         aspect-ratio: 1 / 1;
       }
     </style>
   </head>
   <body class="bg-light text-dark">
+    <!-- Navigation bar with logo and brand name -->
     <nav class="navbar bg-white border-bottom py-1">
       <div class="container d-flex align-items-center">
         <a class="navbar-brand fw-semibold d-flex align-items-center gap-2 m-0" href="#">
@@ -70,16 +81,21 @@
 
     <main class="py-4 py-md-5">
       <div class="container">
+        <!-- Loading state - visible while API request is in progress -->
         <div id="loadingState" class="alert alert-secondary mb-4" role="status">
           Loading tree details...
         </div>
 
+        <!-- Error state - shown if the API request fails or no valid tree ID is found -->
         <div id="errorState" class="alert alert-danger d-none" role="alert"></div>
 
+        <!-- Tree content - hidden until data is loaded successfully -->
         <div id="treeContent" class="d-none">
           <div class="row g-4">
+            <!-- Left column: main tree profile card -->
             <div class="col-12 col-lg-8">
               <div class="card border-0 shadow-sm overflow-hidden">
+                <!-- Hero photo area - first approved photo is set as background by index.js -->
                 <div id="heroPhoto" class="hero-photo bg-success-subtle d-flex align-items-center justify-content-center">                  <div class="text-center px-3">
                     <p class="text-uppercase text-muted small mb-2">Public Tree Profile</p>
                     <h1 id="treeName" class="h2 mb-1">-</h1>
@@ -88,6 +104,7 @@
                 </div>
 
                 <div class="card-body p-4">
+                  <!-- Tree heading with species name, address, and ID badge -->
                   <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-4">
                     <div>
                       <p class="text-uppercase text-success small fw-semibold mb-2">Tree details</p>
@@ -100,7 +117,9 @@
                     </div>
                   </div>
 
+                  <!-- Measurement fact cards grid -->
                   <div class="row g-3">
+                    <!-- Species card -->
                     <div class="col-6 col-md-4">
                       <div class="fact-card">
                         <i class="bi bi-tree fs-5 text-success"></i>
@@ -109,6 +128,7 @@
                       </div>
                     </div>
 
+                    <!-- Estimated age with measurement basis -->
                     <div class="col-6 col-md-4">
                       <div class="fact-card">
                         <i class="bi bi-hourglass-split fs-5 text-success"></i>
@@ -120,6 +140,7 @@
                       </div>
                     </div>
 
+                    <!-- Height with measurement method -->
                     <div class="col-6 col-md-4">
                       <div class="fact-card">
                         <i class="bi bi-arrows-vertical fs-5 text-success"></i>
@@ -131,6 +152,7 @@
                       </div>
                     </div>
 
+                    <!-- Trunk diameter with measurement method -->
                     <div class="col-6 col-md-4">
                       <div class="fact-card">
                         <i class="bi bi-circle fs-5 text-success"></i>
@@ -142,6 +164,7 @@
                       </div>
                     </div>
 
+                    <!-- Canopy diameter -->
                     <div class="col-6 col-md-4">
                       <div class="fact-card">
                         <i class="bi bi-bounding-box fs-5 text-success"></i>
@@ -150,6 +173,7 @@
                       </div>
                     </div>
 
+                    <!-- Canopy density -->
                     <div class="col-6 col-md-4">
                       <div class="fact-card">
                         <i class="bi bi-cloud fs-5 text-success"></i>
@@ -158,6 +182,7 @@
                       </div>
                     </div>
 
+                    <!-- CO2 sequestration card with info popover -->
                     <div class="col-6 col-md-4">
                       <div class="fact-card">
                         <div class="d-flex align-items-center gap-2">
@@ -189,6 +214,7 @@
                       </div>
                     </div>
 
+                    <!-- Water usage card with info popover -->
                     <div class="col-6 col-md-4">
                       <div class="fact-card">
                         <div class="d-flex align-items-center gap-2">
@@ -225,11 +251,13 @@
               </div>
             </div>
 
+            <!-- Right column: about this tree sidebar -->
             <div class="col-12 col-lg-4">
               <div class="card border-0 shadow-sm h-100">
                 <div class="card-body p-4">
                   <h2 class="h5 mb-3">About this tree</h2>
 
+                  <!-- Tree metadata -->
                   <dl class="row mb-0">
                     <dt class="col-5 text-muted fw-normal">Planted at</dt>
                     <dd id="detailPlantedAt" class="col-7">-</dd>
@@ -252,19 +280,25 @@
             </div>
           </div>
 
+          <!-- Location section with Leaflet map -->
           <div class="row g-4 mt-1 mt-md-2">
             <div class="col-12 ">
               <div class="card border-0 shadow-sm h-100">
                 <div class="card-body p-4">
                   <div class="d-flex justify-content-between align-items-center mb-3">
                     <h2 class="h5 mb-0">Location</h2>
+                    <!-- GPS coordinates -->
                     <span id="latLngText" class="text-muted small">-</span>
                   </div>
+                  <!-- Map container - initialised by renderMap() in index.js -->
                   <div id="map"></div>
                 </div>
               </div>
             </div>
 
+          <!-- Photo gallery section -->
+          <!-- Populated dynamically by renderPhotos() in index.js -->
+          <!-- Only approved photos are displayed -->
           <div class="row g-4 mt-1 mt-md-2">
             <div class="col-12 ">
               <div class="card border-0 shadow-sm h-100">
@@ -276,6 +310,7 @@
                     </div>
                   </div>
 
+                  <!-- Gallery grid - populated from API response -->
                   <div class="row g-3 mt-1" id="photoGallery">
                     <div class="col-12">
                       <p class="text-muted mb-0">No approved photos available yet.</p>
@@ -289,6 +324,7 @@
       </div>
     </main>
 
+    <!-- Footer -->
     <footer class="border-top bg-white py-4">
       <div class="container d-flex flex-column flex-md-row justify-content-between gap-2">
         <p class="mb-0 text-muted small">Copyright © 2026 Hug a Tree. All rights reserved.</p>
@@ -296,12 +332,15 @@
       </div>
     </footer>
 
+    <!-- Bootstrap JS for popovers and interactive components -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS for map rendering -->
     <script
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
+    <!-- Main application script -->
     <script
       src="index.js">      
     </script>
