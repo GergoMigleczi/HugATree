@@ -1,33 +1,46 @@
+# Docker Compose configuration for the HugATree application
+# Defines two services: the PostgreSQL database and the PHP API server
+
 services:
+  # PostgreSQL database with PostGIS extension for spatial/GPS data
   db:
     image: postgis/postgis:16-3.4
     container_name: hugatree_db
+    # Database credentials for local development
     environment:
       POSTGRES_DB: hugatree
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    # Expose PostgreSQL on the default port
     ports:
       - "5432:5432"
+    # Persist database data and run initialisation scripts on first startup
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d:ro
+    # Wait until the database is ready before allowing the API to connect
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d hugatree"]
       interval: 5s
       timeout: 3s
       retries: 20
 
+  # PHP Slim API server that handles requests from the mobile app and public website
   api:
     build: ./api
     container_name: hugatree_api
     env_file: ./api/.env
+    # Persistent storage for uploaded photos
     volumes:
       - uploads_data:/var/uploads
+    # API accessible on port 8000
     ports:
       - "8000:8000"
+    # Only start the API after the database is healthy
     depends_on:
       db:
         condition: service_healthy
+    # Start the PHP built-in server with error reporting enabled
     command: >
       php
       -d display_errors=1
@@ -38,6 +51,7 @@ services:
       -t public
       public/index.php
 
+# Named volumes for data persistence between container restarts
 volumes:
   db_data:
   uploads_data:
